@@ -150,7 +150,7 @@ def mi(x, y, log=False):
 
     return mutual_info
 
-def mi_differentiable(image1, image2, min_=0, max_=255, bins=256, bandwidth=0.1, eps=1e-10):
+def mi_differentiable(image1, image2, min_=0, max_=255, bins=256, bandwidth=0.8, eps=1e-10):
     # 将图片拉平成一维向量,将一维张量转换为二维张量
     x1 = image1.view(1,-1)
     x2 = image2.view(1,-1)
@@ -716,13 +716,13 @@ def demo_mi5():
 
 def main():
 
-  #torch.manual_seed(42)  # 设置随机种子
+  torch.manual_seed(42)  # 设置随机种子
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-  img1_path = '../resources/imgs/vis/1.jpg'
-  img2_path = '../resources/imgs/ir/1.jpg'
-  fused_path = '../resources/imgs/fused/1.jpg'
+  img1_path = '../imgs/RoadScene/vis/1.jpg'
+  img2_path = '../imgs/RoadScene/ir/1.jpg'
+  fused_path = '../imgs/RoadScene/fuse/U2Fusion/1.jpg'
 
   transform = transforms.Compose(
     [

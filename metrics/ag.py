@@ -1,10 +1,10 @@
 import torch
 import kornia
 
-def average_gradient(tensor):
-    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]], dtype=torch.float32).unsqueeze(0))
-    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[1],[-1]], dtype=torch.float32).unsqueeze(0))
-    s = torch.sqrt((grad_x ** 2 + grad_y ** 2))/4
+def average_gradient(tensor, eps=1e-8):
+    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]], dtype=torch.float64).unsqueeze(0))
+    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[1],[-1]], dtype=torch.float64).unsqueeze(0))
+    s = torch.sqrt(grad_x ** 2 + grad_y ** 2 + eps)/4
     return torch.sum(s) / ((tensor.shape[2] - 1) * (tensor.shape[3] - 1))
 
 def average_gradient_loss(tensor):

@@ -12,6 +12,7 @@ def numpy_to_tensor(image):
 
 def grey_tensor_to_image(tensor):
   image = tensor.squeeze().detach().numpy()
+  image = np.nan_to_num(image, nan=0.0)
   image = np.clip(image * 255, 0, 255).astype(np.uint8)
   return image
 
@@ -22,7 +23,7 @@ def read_grey_tensor(path=None,requires_grad=True,dataset=None,category=None,nam
     else:
       path = os.path.join(base_path,dataset,category,model,name)
   img_grey = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-  return Variable(numpy_to_tensor(img_grey).float(), requires_grad=requires_grad)
+  return Variable(numpy_to_tensor(img_grey).double(), requires_grad=requires_grad)
 
 def read_rgb_tensor(path=None,requires_grad=True,dataset=None,category=None,name=None,model=None,base_path='./imgs'):
   if path == None:
@@ -64,7 +65,7 @@ def save_result(folder_name,vis_result,ir_result,vis,ir,base_path='./logs'):
   plt.imshow(vis,cmap='gray')
   plt.title("VIS")
   plt.subplot(2,3,3)
-  plt.imshow(vis-vis_result,cmap='gray')
+  plt.imshow(np.abs(vis-vis_result),cmap='gray')
   plt.title("VIS Difference")
   plt.subplot(2,3,4)
   plt.imshow(ir_result,cmap='gray')
@@ -73,7 +74,7 @@ def save_result(folder_name,vis_result,ir_result,vis,ir,base_path='./logs'):
   plt.imshow(ir,cmap='gray')
   plt.title("IR")
   plt.subplot(2,3,6)
-  plt.imshow(ir-ir_result,cmap='gray')
+  plt.imshow(np.abs(ir-ir_result),cmap='gray')
   plt.title("IR Difference")
   plt.savefig(os.path.join(base_path,folder_name,'result.png'))
   plt.close()

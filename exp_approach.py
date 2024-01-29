@@ -16,18 +16,18 @@ from metrics import ei_loss
 from metrics import sd_loss
 from metrics import sf_loss
 from metrics import q_abf
-#from metrics import q_cb
+from metrics import q_cb
 
 # 图片
-ir_tensor = read_grey_tensor(dataset='TNO',category='ir',name='10.bmp',requires_grad=False)
-vis_tensor = read_grey_tensor(dataset='TNO',category='vis',name='10.bmp',requires_grad=False)
-fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='10.bmp',model='U2Fusion',requires_grad=True)
-fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='10.bmp',model='U2Fusion',requires_grad=True)
+ir_tensor = read_grey_tensor(dataset='TNO',category='ir',name='9.bmp',requires_grad=False)
+vis_tensor = read_grey_tensor(dataset='TNO',category='vis',name='9.bmp',requires_grad=False)
+fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
+fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
 
 # Params
-num_epochs = 1000
-learning_rate = 0.005
-folder_name = 'APPROACH_Q_ABF'
+num_epochs = 100
+learning_rate = 0.01
+folder_name = 'APPROACH_Q_CB'
 torch.manual_seed(42)
 print_interval = 1
 
@@ -48,6 +48,10 @@ for epoch in range(num_epochs):
     # 清零梯度
     optimizer_vis.zero_grad()
     optimizer_ir.zero_grad()
+
+    # 处理 nan 的情况
+    #fuse_tensor1 = torch.nan_to_num(fuse_tensor1, nan=0.0)
+    #fuse_tensor2 = torch.nan_to_num(fuse_tensor2, nan=0.0)
 
     # 计算损失
     #loss_vis = ssim_loss(fuse_tensor1, vis_tensor, window_size=11)
@@ -70,13 +74,21 @@ for epoch in range(num_epochs):
     #loss_ir = sd_loss(fuse_tensor2)
     #loss_vis = sf_loss(fuse_tensor1)
     #loss_ir = sf_loss(fuse_tensor2)
-    loss_vis = (q_abf(vis_tensor,vis_tensor,vis_tensor)-q_abf(vis_tensor,vis_tensor,fuse_tensor1))*100
-    loss_ir = (q_abf(ir_tensor,ir_tensor,ir_tensor)-q_abf(ir_tensor,ir_tensor,fuse_tensor2))*100
-
+    #loss_vis = q_abf(vis_tensor,vis_tensor,vis_tensor)-q_abf(vis_tensor,vis_tensor,fuse_tensor1)
+    #loss_ir = q_abf(ir_tensor,ir_tensor,ir_tensor)-q_abf(ir_tensor,ir_tensor,fuse_tensor2)
+    loss_vis = q_cb(fuse_tensor1)
+    loss_ir = q_cb(fuse_tensor2)
 
     # 反向传播
     loss_vis.backward()
     loss_ir.backward()
+
+    # 梯度检查
+    #print(torch.isnan(fuse_tensor1.grad).any().item())
+    #print("Before clipping - Max Grad: {}, Min Grad: {}, Avg Grad: {}".format(
+    #    torch.max(fuse_tensor1.grad), torch.min(fuse_tensor1.grad), torch.mean(fuse_tensor1.grad)
+    #))
+    #torch.autograd.gradcheck(loss_vis_, (vis_tensor, fuse_tensor1))
 
     # 更新参数
     optimizer_vis.step()
