@@ -1,27 +1,10 @@
 import torch
-import torch.nn as nn
-from torchviz import make_dot
 
-# 定义一个简单的神经网络模型
-class SimpleNet(nn.Module):
-    def __init__(self):
-        super(SimpleNet, self).__init__()
-        self.fc1 = nn.Linear(10, 5)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(5, 1)
+# 创建两个张量
+tensor1 = torch.tensor([[[[1,1,1], [4,4,4]]]])
+tensor2 = torch.tensor([[[[7, 8, 9], [10, 11, 12]]]])
 
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        return x
+# 在维度 0 上拼接两个张量
+result = torch.cat((tensor1, tensor2), dim=-2)
 
-# 创建一个模型实例
-model = SimpleNet()
-
-# 创建一个随机输入
-input_tensor = torch.randn((1, 10))
-
-# 调用 make_dot 可视化计算图
-output_tensor = model(input_tensor)
-make_dot(output_tensor, params=dict(model.named_parameters()))
+print(result)

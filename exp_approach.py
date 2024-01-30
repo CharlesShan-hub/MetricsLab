@@ -26,7 +26,7 @@ fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model
 fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
 
 # Params
-num_epochs = 5
+num_epochs = 10
 learning_rate = 0.01
 folder_name = 'APPROACH_Q_CB'
 torch.manual_seed(42)
