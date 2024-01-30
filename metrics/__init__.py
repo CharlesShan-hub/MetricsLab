@@ -29,6 +29,4 @@ from metrics.q_abf import q_abf_loss as q_abf_loss
 # 视觉感知
 from metrics.q_cb import q_cb as q_cb
 from metrics.q_cb import q_cb_loss as q_cb_loss
-from metrics.q_cv import q_cv as q_cv
-from metrics.q_cv import q_cv_loss as q_cv_loss
 

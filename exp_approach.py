@@ -18,7 +18,6 @@ from metrics import sd_loss
 from metrics import sf_loss
 from metrics import q_abf
 from metrics import q_cb
-#from metrics import q_cv
 
 # 图片
 ir_tensor = read_grey_tensor(dataset='TNO',category='ir',name='9.bmp',requires_grad=False)
