@@ -18,7 +18,7 @@ from metrics import rmse_loss
 optimizer = optim.Adam([fuse_tensor], lr=0.003)
 
 # 训练参数
-num_epochs = 400
+num_epochs = 20
 
 # 每隔多少轮次打印一次图像
 print_interval = 100

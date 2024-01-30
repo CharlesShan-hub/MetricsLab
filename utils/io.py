@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def numpy_to_tensor(image):
   transform = transforms.Compose([transforms.ToTensor()])
-  return transform(image).unsqueeze(0)
+  return transform(image).double().unsqueeze(0)
 
 def grey_tensor_to_image(tensor):
   image = tensor.squeeze().detach().numpy()
@@ -23,7 +23,7 @@ def read_grey_tensor(path=None,requires_grad=True,dataset=None,category=None,nam
     else:
       path = os.path.join(base_path,dataset,category,model,name)
   img_grey = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-  return Variable(numpy_to_tensor(img_grey).double(), requires_grad=requires_grad)
+  return Variable(numpy_to_tensor(img_grey), requires_grad=requires_grad)
 
 def read_rgb_tensor(path=None,requires_grad=True,dataset=None,category=None,name=None,model=None,base_path='./imgs'):
   if path == None:

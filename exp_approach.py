@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import transforms
+import torchviz
 import matplotlib.pyplot as plt
 from utils import *
 
@@ -17,6 +18,7 @@ from metrics import sd_loss
 from metrics import sf_loss
 from metrics import q_abf
 from metrics import q_cb
+#from metrics import q_cv
 
 # 图片
 ir_tensor = read_grey_tensor(dataset='TNO',category='ir',name='9.bmp',requires_grad=False)
@@ -25,7 +27,7 @@ fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model
 fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
 
 # Params
-num_epochs = 100
+num_epochs = 5
 learning_rate = 0.01
 folder_name = 'APPROACH_Q_CB'
 torch.manual_seed(42)
@@ -42,6 +44,8 @@ img_array_ir.append(grey_tensor_to_image(fuse_tensor2))
 # 定义优化器，使用 fuse 作为参数进行优化
 optimizer_vis = optim.Adam([fuse_tensor1], lr=learning_rate)
 optimizer_ir = optim.Adam([fuse_tensor2], lr=learning_rate)
+#optimizer_vis = optim.SGD([fuse_tensor1], lr=learning_rate, momentum=0.9)
+#optimizer_ir = optim.SGD([fuse_tensor2], lr=learning_rate, momentum=0.9)
 
 # 训练循环
 for epoch in range(num_epochs):
@@ -76,14 +80,22 @@ for epoch in range(num_epochs):
     #loss_ir = sf_loss(fuse_tensor2)
     #loss_vis = q_abf(vis_tensor,vis_tensor,vis_tensor)-q_abf(vis_tensor,vis_tensor,fuse_tensor1)
     #loss_ir = q_abf(ir_tensor,ir_tensor,ir_tensor)-q_abf(ir_tensor,ir_tensor,fuse_tensor2)
-    loss_vis = q_cb(fuse_tensor1)
-    loss_ir = q_cb(fuse_tensor2)
+    loss_vis = 1-q_cb(vis_tensor,vis_tensor,fuse_tensor1,mode='frequency') # 相同图片 Qcb 为 1
+    loss_ir = 1-q_cb(ir_tensor,ir_tensor,fuse_tensor2,mode='frequency')
 
-    # 反向传播
-    loss_vis.backward()
+    # 反向传播 - Without Computation Graph
+    # loss_vis.backward()
+    # loss_ir.backward()
+    # 反向传播 - With Computation Graph
+    loss_vis.backward(retain_graph=True)
     loss_ir.backward()
+    if epoch == 0:
+        torchviz.make_dot(loss_vis).render(f'computation_graph', format='png')
 
     # 梯度检查
+    # print(fuse_tensor1.grad)
+    # plt.imshow(grey_tensor_to_image(fuse_tensor1.grad),cmap='gray')
+    # plt.show()
     #print(torch.isnan(fuse_tensor1.grad).any().item())
     #print("Before clipping - Max Grad: {}, Min Grad: {}, Avg Grad: {}".format(
     #    torch.max(fuse_tensor1.grad), torch.min(fuse_tensor1.grad), torch.mean(fuse_tensor1.grad)
