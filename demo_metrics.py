@@ -1,40 +1,55 @@
 # 本案例用于验证指标与 VIFB 的一致性
+import csv
+from utils import *
 
-from metrics import ce_loss
-from metrics import en_loss
-from metrics import mi_loss
-from metrics import psnr_loss
-from metrics import ssim_loss
-from metrics import rmse_loss
-from metrics import ag_loss
-from metrics import ei_loss
-from metrics import sd_loss
-from metrics import sf_loss
-from metrics import q_abf
-from metrics import q_cb
+from metrics import ce_metric
+from metrics import en_metric
+from metrics import mi_metric
+from metrics import psnr_metric
+from metrics import ssim_metric
+from metrics import rmse_metric
+from metrics import ag_metric
+from metrics import ei_metric
+from metrics import sd_metric
+from metrics import sf_metric
+from metrics import q_abf_metric
+from metrics import q_cb_metric
 
 def main():
+    name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
     ir_tensor = read_grey_tensor(dataset='TNO',category='ir',name='9.bmp',requires_grad=False)
     vis_tensor = read_grey_tensor(dataset='TNO',category='vis',name='9.bmp',requires_grad=False)
-    fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
-    fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='FPDE',requires_grad=True)
-    fuse_tensor3 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='ADF',requires_grad=True)
-    fuse_tensor4 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='Average',requires_grad=True)
-    fuse_tensor5 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='CBF',requires_grad=True)
-    fuse_tensor6 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='CDDFuse',requires_grad=True)
-    fuse_tensor7 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='FusionGAN',requires_grad=True)
-    fuse_tensor8 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='GFCE',requires_grad=True)
-
-    tensor_list = [fuse_tensor1,fuse_tensor2,fuse_tensor3,fuse_tensor4,fuse_tensor5,fuse_tensor6,fuse_tensor7,fuse_tensor8]
-    name_list = ['U2Fusion','FPDE','ADF'，'Average', 'CBF', 'CDDFuse', 'FusionGAN', 'GFCE']
-    metric_list = [
-        ce_loss
-    ]
-
-    for metric in metric_list:
-        for (name,fuse_tensor) in enumerate(name_list,tensor_list):
-            pass
-
+    tensor_list = []
+    for name in name_list:
+        tensor_list.append(read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model=name,requires_grad=True))
+    
+    metric_dist = {
+        #'CE':ce_metric,       #
+        #'EC':en_metric,       #
+        #'mi':mi_metric,       #
+        'PSNR':psnr_metric,   # 通过，
+        #'SSIM':ssim_metric,   #
+        #'RMSE':rmse_metric,   #
+        #'AG':ag_metric,       # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        #'EI':ei_metric,       # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        #'SD':sd_metric,       # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        #'SF':sf_metric,       # 通过，小数点后一位无误差。后续再调整
+        #'Q_ABF':q_abf_metric, #
+        #'Q_CB':q_cb_metric    #
+    }
+    metrics_data = []
+    metrics_data.append(['Metric Demo']+name_list)
+    for metric in metric_dist:
+        metric_data = []
+        for (name,fuse_tensor) in zip(name_list,tensor_list):
+            value = metric_dist[metric](vis_tensor,ir_tensor,fuse_tensor).item()
+            print(metric,name,':',value)
+            metric_data.append(value)
+        metrics_data.append([metric]+metric_data)
+        print(metric_data)
+    with open('./logs/metrics_demo.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(metrics_data)
 
 if __name__ == '__main__':
   main()

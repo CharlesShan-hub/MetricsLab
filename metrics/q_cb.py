@@ -105,15 +105,16 @@ def contrast_sensitivity_filtering_freq(im, mode='spatial'):
     else:
         raise Exception("mode should only be `spatial` or `frequency`")
 
-def q_cb(imgA, imgB, imgF, border_type='constant', mode='spatial'):
+def q_cb(imgA, imgB, imgF, border_type='constant', mode='spatial', normalize=True):
     # mode = 'spatial', mode = 'frequency'
     # Normalize
     #imgF.requires_grad = True
 
     # return torch.mean(imgA-imgF)
-    imgA = _normalize(imgA)
-    imgB = _normalize(imgB)
-    imgF = _normalize(imgF)
+    if normalize:
+        imgA = _normalize(imgA)
+        imgB = _normalize(imgB)
+        imgF = _normalize(imgF)
     # return torch.mean(imgA-imgF)
 
     # Contrast sensitivity filtering with DoG --- Get Sd
@@ -185,7 +186,11 @@ def q_cb(imgA, imgB, imgF, border_type='constant', mode='spatial'):
 
 
 def q_cb_loss(imgA, imgB, imgF):
-  return -q_cb(imgA, imgB, imgF)
+    return -q_cb(imgA, imgB, imgF)
+
+
+def q_cb_metric(imgA, imgB, imgF):
+    return q_cb(imgA, imgB, imgF)
 
 
 def main():
@@ -208,10 +213,12 @@ def main():
     fused = TF.to_tensor(Image.open(fused_path)).double().unsqueeze(0).to(device)
     # print (img1, img2, fused)
 
-    print(q_cb(img1,img2,fused,mode='frequency'))
-    print(q_cb(img1,img1,img1,mode='frequency'))
-    print(q_cb(img1,img2,fused,mode='spatial'))
-    print(q_cb(img1,img1,img1,mode='spatial'))
+    print('With normalize, Different Images: ',q_cb(img1,img2,fused,mode='frequency',normalize=True))
+    print('With normalize, Same Images: ',q_cb(img1,img1,img1,mode='frequency',normalize=True))
+    print('Without normalize, Different Images: ',q_cb(img1,img2,fused,mode='frequency',normalize=False))
+    print('Without normalize, Same Images: ',q_cb(img1,img1,img1,mode='frequency',normalize=False))
+    # print(q_cb(img1,img2,fused,mode='spatial'))
+    # print(q_cb(img1,img1,img1,mode='spatial'))
 
 if __name__ == '__main__':
   main()

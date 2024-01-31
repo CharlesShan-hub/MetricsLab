@@ -13,6 +13,9 @@ def entropy(grey_tensor):
 def entropy_loss(grey_tensor,grey_scale=256):
     return np.log2(grey_scale)-entropy(grey_tensor)
 
+def en_metric(imgA,imgB,imgF):
+    return entropy(imgF)
+
 def demo1():
     # 计算理论最大值
     print("理论最大值(log2 n)：", np.log2(16 * 16))

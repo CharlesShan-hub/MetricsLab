@@ -12,3 +12,7 @@ def cross_entropy(predict, target, bins=torch.linspace(0, 255, 256), bandwidth=t
     return torch.sum(h1 * torch.log2(h1 / (h2 + eps)))
 
 cross_entropy_loss = cross_entropy
+
+def ce_metric(imgA, imgB, imgF):
+    w0 = w1 = 0.5
+    return w0 * cross_entropy(imgA,imgF) + w1 * cross_entropy(imgB,imgF)

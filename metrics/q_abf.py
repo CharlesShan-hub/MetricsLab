@@ -91,7 +91,12 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
 
 
 def q_abf_loss(imgA, imgB, imgF):
-  return -q_abf(imgA, imgB, imgF)
+    return -q_abf(imgA, imgB, imgF)
+
+
+def q_abf_metric(imgA,imgB,imgF):
+    return q_abf(imgA, imgB, imgF)
+
 
 def main():
     torch.manual_seed(42)  # 设置随机种子

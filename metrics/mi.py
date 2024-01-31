@@ -181,6 +181,12 @@ def mi_differentiable_loss(origin,predict):
     #return torch.abs(1 - mi_differentiable(x,y) / mi_differentiable(x,x))
     return torch.abs(1 - mi_differentiable(origin,predict) / mi_differentiable(origin,origin))
 
+
+def mi_metric(imgA,imgB,imgF):
+    w0 = w1 = 0.5
+    return w0 * mi_differentiable(imgA,imgF) + w1 * mi_differentiable(imgB, imgF)
+
+
 def demo_entropy():
     # 函数1
     def function1():
