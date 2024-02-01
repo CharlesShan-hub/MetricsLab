@@ -7,6 +7,14 @@ from torchvision import transforms
 import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 
+###########################################################################################
+
+__all__ = [
+    'q_cb',
+    'q_cb_approach_loss',
+    'q_cb_metric'
+]
+
 def _normalize(data):
     max_value = torch.max(data)
     min_value = torch.min(data)
@@ -28,9 +36,9 @@ G2 = gaussian2d(sigma=4,size=31)
 def contrast_sensitivity_filtering_Sd(size=None,mode='spatial'):
     # f0 f2 a
     f0 = 15.3870;f1 = 1.3456;a = 0.7622 # A.B. Watson, A.J. Ahumada Jr., A standard model for foveal detection of spatial contrast, Journal of Vision 5 (9) (2005) 717–740.
-    
+
     # kernel size
-    if mode == 'frequency': 
+    if mode == 'frequency':
         _, _, m, n = size # VIFB 希望频率的 dog 和原图一样大
         m0 = m/30;n0 = n/30 # VIFB里边这么实现的
         m1 = m/2; n1 = n/2  # DoG1
@@ -38,8 +46,8 @@ def contrast_sensitivity_filtering_Sd(size=None,mode='spatial'):
         m3 = m/8; n3 = n/8  # DoG3
     elif mode == 'spatial': # 最后证明
         m=n=7 # 我想转换到时域所以 size 需要很小（我加的）
-        m0 = m/2; n0 = n/2  # DoG1 
-    
+        m0 = m/2; n0 = n/2  # DoG1
+
     # meshgrid
     #u,v = torch.meshgrid(torch.linspace(-1, 1, n, dtype=torch.float64), torch.linspace(-1, 1, m, dtype=torch.float64))
     #u = u*n0;v = v*m0
@@ -51,7 +59,7 @@ def contrast_sensitivity_filtering_Sd(size=None,mode='spatial'):
     # Dog in Frequency
     r = torch.sqrt(u**2 + v**2)
     Sd_freq_domain = torch.exp(-(r / f0)**2) - a * torch.exp(-(r / f1)**2)
-    if mode == 'frequency': 
+    if mode == 'frequency':
         return Sd_freq_domain
     elif mode == 'spatial':
         Sd_time_domain = torch.fft.ifft2(Sd_freq_domain)
@@ -185,13 +193,14 @@ def q_cb(imgA, imgB, imgF, border_type='constant', mode='spatial', normalize=Tru
     return torch.mean(Q)
 
 
-def q_cb_loss(imgA, imgB, imgF):
-    return -q_cb(imgA, imgB, imgF)
+def q_cb_loss(A, B, F):
+    return -q_cb(A, B, F)
 
 
-def q_cb_metric(imgA, imgB, imgF):
-    return q_cb(imgA, imgB, imgF)
+def q_cb_metric(A, B, F):
+    return q_cb(A, B, F)
 
+###########################################################################################
 
 def main():
     torch.manual_seed(42)  # 设置随机种子
@@ -222,4 +231,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-

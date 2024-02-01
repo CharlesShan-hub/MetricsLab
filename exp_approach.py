@@ -4,10 +4,11 @@ import torch.nn.functional as F
 from torchvision import transforms
 import torchviz
 import matplotlib.pyplot as plt
+import numpy as np
 from utils import *
 
-from metrics import ce_loss
-from metrics import en_loss
+from metrics import ce_approach_loss
+from metrics import en_approach_loss
 from metrics import mi_loss
 from metrics import psnr_loss
 from metrics import ssim_loss
@@ -27,9 +28,11 @@ fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model
 
 # Params
 num_epochs = 20
-learning_rate = 0.001
-folder_name = 'APPROACH_Q_CE'
-torch.manual_seed(42)
+learning_rate = 0.0001
+folder_name = 'APPROACH_CE'
+seed = 42
+torch.manual_seed(seed)
+np.random.seed(seed)
 print_interval = 1
 
 # Log
@@ -57,14 +60,14 @@ for epoch in range(num_epochs):
     #fuse_tensor2 = torch.nan_to_num(fuse_tensor2, nan=0.0)
 
     # 计算损失
+    # loss_vis = ce_approach_loss(vis_tensor, fuse_tensor1)
+    # loss_ir = ce_approach_loss(ir_tensor, fuse_tensor2)
+    loss_vis = en_approach_loss(vis_tensor, fuse_tensor1)
+    loss_ir = en_approach_loss(ir_tensor, fuse_tensor2)
     #loss_vis = ssim_loss(fuse_tensor1, vis_tensor, window_size=11)
     #loss_ir = ssim_loss(fuse_tensor2, ir_tensor, window_size=11)
     #loss_vis = rmse_loss(fuse_tensor1, vis_tensor)
     #loss_ir = rmse_loss(fuse_tensor2, ir_tensor)
-    loss_vis = ce_loss(vis_tensor, fuse_tensor1)
-    loss_ir = ce_loss(ir_tensor, fuse_tensor2)
-    #loss_vis = en_loss(fuse_tensor1)
-    #loss_ir = en_loss(fuse_tensor2)
     #loss_vis = mi_loss(fuse_tensor1,vis_tensor)
     #loss_ir = mi_loss(fuse_tensor2,ir_tensor)
     #loss_vis = psnr_loss(fuse_tensor1,vis_tensor,max_val=1)
@@ -89,7 +92,7 @@ for epoch in range(num_epochs):
     loss_vis.backward(retain_graph=True)
     loss_ir.backward()
     if epoch == 0:
-        torchviz.make_dot(loss_vis).render(f'computation_graph', format='png')
+        torchviz.make_dot(loss_vis).render(f'./logs/{folder_name}/computation_graph', format='png')
 
     # 梯度检查
     # print(fuse_tensor1.grad)
@@ -134,4 +137,7 @@ plot_and_save_loss_with_lr(folder_name,loss_array_ir,learning_rate,'ir_loss.png'
 #plot_metrics(folder_name,metrics_array)
 
 # Save Result Image
-save_result(folder_name,img_array_vis[-1],img_array_ir[-1],vis_tensor,ir_tensor)
+save_approach_result(folder_name,grey_tensor_to_image(fuse_tensor1),img_array_vis[-1],img_array_ir[-1],vis_tensor,ir_tensor)
+
+# Save Info
+save_info(folder_name,num_epochs,learning_rate,seed)

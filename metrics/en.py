@@ -1,189 +1,273 @@
 import torch
 import kornia
+
+###########################################################################################
+
+__all__ = [
+    'en',
+    'en_approach_loss',
+    'en_metric'
+]
+
+def en(grey_tensor, bandwidth=0.1, eps=1e-10, is_pdf=False):
+    """
+    Calculate the entropy of a grayscale image.
+
+    Args:
+        grey_tensor (torch.Tensor): The grayscale image tensor.
+        bandwidth (float, optional): Bandwidth for histogram smoothing. Default is 0.1.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+        is_pdf (bool, optional): Whether the input tensor represents a probability density function (PDF).
+                    If True, the input tensor is considered as a PDF; otherwise, it is treated as pixel values.
+                    Default is False.
+
+    Returns:
+        torch.Tensor: The entropy of the grayscale image.
+    """
+    if is_pdf == False:
+        # 将灰度图像值缩放到范围[0, 255]
+        grey_tensor = grey_tensor.view(1, -1) * 255
+
+        # 创建用于直方图计算的区间
+        bins = torch.linspace(0, 255, 256).to(grey_tensor.device)
+
+        # 计算灰度图像的直方图
+        histogram = kornia.enhance.histogram(grey_tensor, bins=bins, bandwidth=torch.tensor(bandwidth))
+    else:
+        histogram = grey_tensor
+
+    # 计算图像的熵
+    image_entropy = -torch.sum(histogram * torch.log2(histogram + eps))
+
+    return image_entropy
+
+# 两张图一样，含有的信息会相等
+def en_approach_loss(A,F):
+    return torch.abs(en(A) - en(F))
+
+# 与 VIFB 统一
+def en_metric(A, B, F):
+    return en(F)
+
+###########################################################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-def entropy(grey_tensor,bandwidth=0.1,eps=1e-10):
-    grey_tensor = grey_tensor.view(1, -1) * 255
-    bins = torch.linspace(0, 255, 256).to(grey_tensor.device)
-    histogram = kornia.enhance.histogram(grey_tensor, bins=bins, bandwidth=torch.tensor(bandwidth))
-    image_entropy = -torch.sum(histogram * torch.log2(histogram + eps))
-    return image_entropy
+def en_loss(grey_tensor,grey_scale=256):
+    return np.log2(grey_scale)-en(grey_tensor)
 
-def entropy_loss(grey_tensor,grey_scale=256):
-    return np.log2(grey_scale)-entropy(grey_tensor)
+def vis_entropy():
+    def vis_entropy_with_one_var_1D():
+        # 生成 x 值
+        x_values = np.linspace(0, 1, 100)
 
-def en_metric(imgA,imgB,imgF):
-    return entropy(imgF)
+        # 计算信息熵
+        entropies = [en(torch.tensor([x,1-x]),is_pdf=True) for x in x_values]
 
-def demo1():
+        # 子图1
+        plt.subplot(2, 2, 1)
+        plt.plot(x_values, entropies)
+        plt.xlabel('x')
+        plt.ylabel('entropy')
+        plt.title('Entropy of (x, 1-x)')
+
+    def vis_entropy_with_one_var_2D():
+        # 生成 x 和 y 的网格
+        x_values = np.linspace(0, 1, 200)
+        y_values = np.linspace(0, 1, 200)
+        xx, yy = np.meshgrid(x_values, y_values)
+
+        # 计算信息熵
+        entropies = np.zeros_like(xx)
+        for i in range(len(x_values)):
+            for j in range(len(y_values)):
+                entropies[i, j] = en(torch.tensor([xx[i, j], yy[i, j]]),is_pdf=True)
+
+        # 子图2 - 绘制热图
+        plt.subplot(2, 2, 2)
+
+        # 设置透明度条件
+        alpha_values = np.where(np.isclose(xx + yy, 1, atol=1e-2), 1, 0.2)
+
+        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha_values)
+
+        plt.colorbar()
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title('Entropy of (x, y)')
+
+    def vis_entropy_with_two_var_2D():
+        # 生成 x 和 y 的网格
+        x_values = np.linspace(0, 1, 200)
+        y_values = np.linspace(0, 1, 200)
+        xx, yy = np.meshgrid(x_values, y_values)
+
+        # 计算信息熵
+        z_values = 1 - xx - yy
+        entropies = np.zeros_like(z_values)
+        alpha = np.zeros_like(z_values)
+        for i in range(len(x_values)):
+            for j in range(len(y_values)):
+                # 如果 x + y 大于 1，透明度为 0，否则透明度为 1
+                alpha[i,j] = 0 if xx[i, j] + yy[i, j] > 1 else 1
+                entropies[i, j] = en(torch.tensor([xx[i, j], yy[i, j], z_values[i, j]]),is_pdf=True)
+
+        # 子图3 - 绘制热图
+        plt.subplot(2, 2, 3)
+
+        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha)
+
+        plt.colorbar()
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title('Entropy of (x, y, 1-x-y)')
+
+    def vis_entropy_with_two_var_3D():
+        ax = plt.subplot(2, 2, 4, projection='3d')
+        ax.set_title("Entropy of (x, y, z)")
+        # 生成 x, y 的坐标网格
+        x_values = np.linspace(0, 1, 200)
+        y_values = np.linspace(0, 1, 200)
+        xx, yy = np.meshgrid(x_values, y_values)
+
+        # 计算 z 坐标，满足 x + y + z = 1 且 z 大于零
+        zz = np.maximum(0, 1 - xx - yy)
+
+        # 过滤掉 z=0 的部分
+        mask = zz > 0
+        xx = np.where(mask, xx, np.nan)
+        yy = np.where(mask, yy, np.nan)
+        zz = np.where(mask, zz, np.nan)
+
+        # 计算每个点的信息熵
+        entropies = np.array([[en(torch.tensor([x, y, z]),is_pdf=True) for x, y, z in zip(row_x, row_y, row_z)] for row_x, row_y, row_z in zip(xx, yy, zz)])
+
+        # 绘制平面，使用信息熵来确定颜色
+        surf = ax.plot_surface(xx, yy, zz, facecolors=plt.cm.viridis(entropies), rstride=5, cstride=5, alpha=0.8)
+        surf.set_facecolor((0, 0, 0, 0))
+
+        # 设置坐标轴标签
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+
+    # 调整子图之间的间距
+    plt.subplots_adjust(hspace=0.4, wspace=0.2)
+
+    # 调用各个子图的函数绘制图形
+    vis_entropy_with_one_var_1D()
+    vis_entropy_with_one_var_2D()
+    vis_entropy_with_two_var_2D()
+    vis_entropy_with_two_var_3D()
+
+    # 显示图形
+    plt.show()
+
+def visualize_image_entropy(size):
     # 计算理论最大值
-    print("理论最大值(log2 n)：", np.log2(16 * 16))
+    theoretical_max_entropy = np.log2(256)
+    print("理论最大值(log2 n)：", theoretical_max_entropy)
 
-    # 生成完全完全覆盖所有像素的张量
-    full_tensor = torch.arange(256).view(1, 1, 16, 16)
-    full_tensor_entropy = entropy(full_tensor)
+    # 生成完全覆盖所有像素的张量
+    full_tensor = (torch.arange(256*(size**2/256)).view(1, 1, size, size) / (size**2/256)).to(torch.uint8)
+    full_tensor_entropy = en(full_tensor)
     print("均匀张量的信息熵：", full_tensor_entropy)
 
     # 生成随机张量
-    random_tensor = torch.randint(0, 256, size=(1, 1, 16, 16), dtype=torch.uint8)
-    random_tensor_entropy = entropy(random_tensor)
+    random_tensor = torch.randint(0, 256, size=(1, 1, size, size), dtype=torch.uint8)
+    random_tensor_entropy = en(random_tensor)
     print("随机张量的信息熵：", random_tensor_entropy)
 
     # 生成纯色张量
-    white_tensor = torch.ones(1, 1, 16, 16) * 255
-    white_tensor_entropy = entropy(white_tensor)
+    white_tensor = torch.full((1, 1, size, size), 255, dtype=torch.uint8)
+    white_tensor_entropy = en(white_tensor)
     print("白色张量的信息熵：", white_tensor_entropy)
 
-    grey_tensor = torch.ones(1, 1, 16, 16) * 127
-    grey_tensor_entropy = entropy(grey_tensor)
+    grey_tensor = torch.full((1, 1, size, size), 127, dtype=torch.uint8)
+    grey_tensor_entropy = en(grey_tensor)
     print("灰色张量的信息熵：", grey_tensor_entropy)
 
-    black_tensor = torch.ones(1, 1, 16, 16) * 0
-    black_tensor_entropy = entropy(black_tensor)
+    black_tensor = torch.full((1, 1, size, size), 0, dtype=torch.uint8)
+    black_tensor_entropy = en(black_tensor)
     print("黑色张量的信息熵：", black_tensor_entropy)
 
     # 绘制图像
-    fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+    tensor_colors = ['Uniform', 'Random', 'Grey', 'White', 'Black']
+    tensor_list = [full_tensor, random_tensor, grey_tensor, white_tensor, black_tensor]
+    entropy_list = [full_tensor_entropy, random_tensor_entropy, grey_tensor_entropy, white_tensor_entropy, black_tensor_entropy]
 
-    # 均匀张量
-    axs[0].imshow(full_tensor.view(16, 16).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[0].set_title(f'Uniform\nEntropy: {full_tensor_entropy:.2f}')
+    fig, axs = plt.subplots(1, len(tensor_list), figsize=(20, 4))
 
-    # 随机张量
-    axs[1].imshow(random_tensor.view(16, 16).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[1].set_title(f'Random\nEntropy: {random_tensor_entropy:.2f}')
-
-    # 灰色张量
-    axs[2].imshow(grey_tensor.view(16, 16).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[2].set_title(f'Grey\nEntropy: {grey_tensor_entropy:.2f}')
-
-    # 白色张量
-    axs[3].imshow(white_tensor.view(16, 16).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[3].set_title(f'White\nEntropy: {white_tensor_entropy:.2f}')
-
-    # 黑色张量
-    axs[4].imshow(black_tensor.view(16, 16).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[4].set_title(f'Black\nEntropy: {black_tensor_entropy:.2f}')
+    for i, (tensor, entropy) in enumerate(zip(tensor_list, entropy_list)):
+        axs[i].imshow(tensor.view(size, size).numpy(), cmap='gray', vmin=0, vmax=255)
+        axs[i].set_title(f'{tensor_colors[i]}\nEntropy: {entropy:.2f}')
 
     plt.show()
 
-def demo2():
-    # 计算理论最大值
-    print("理论最大值(log2 n)：", np.log2(16 * 16))
-
-    # 生成完全完全覆盖所有像素的张量
-    full_tensor = torch.arange(256*16).view(1, 1, 64, 64) / 16
-    full_tensor_entropy = entropy(full_tensor)
-    print("均匀张量的信息熵：", full_tensor_entropy)
-
-    # 生成随机张量
-    random_tensor = torch.rand(1, 1, 64, 64) * 255
-    random_tensor_entropy = entropy(random_tensor)
-    print("随机张量的信息熵：", random_tensor_entropy)
-
-    # 生成纯色张量
-    white_tensor = torch.ones(1, 1, 64, 64) * 255
-    white_tensor_entropy = entropy(white_tensor)
-    print("白色张量的信息熵：", white_tensor_entropy)
-
-    grey_tensor = torch.ones(1, 1, 64, 64) * 127
-    grey_tensor_entropy = entropy(grey_tensor)
-    print("灰色张量的信息熵：", grey_tensor_entropy)
-
-    black_tensor = torch.ones(1, 1, 64, 64) * 0
-    black_tensor_entropy = entropy(black_tensor)
-    print("黑色张量的信息熵：", black_tensor_entropy)
-
-    half_tensor = torch.cat((torch.zeros(1, 1, 64, 32), torch.ones(1, 1, 64, 32) * 255), dim=3)
-    half_tensor_entropy = entropy(half_tensor)
-    print("黑白张量的信息熵：", half_tensor_entropy)
-
-    # 绘制图像
-    fig, axs = plt.subplots(1, 6, figsize=(24, 4))
-
-    # 均匀张量
-    axs[0].imshow(full_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[0].set_title(f'Uniform\nEntropy: {full_tensor_entropy:.2f}')
-
-    # 随机张量
-    axs[1].imshow(random_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[1].set_title(f'Random\nEntropy: {random_tensor_entropy:.2f}')
-
-    # 灰色张量
-    axs[2].imshow(half_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[2].set_title(f'Half\nEntropy: {half_tensor_entropy:.2f}')
-
-    # 灰色张量
-    axs[3].imshow(grey_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[3].set_title(f'Grey\nEntropy: {grey_tensor_entropy:.2f}')
-
-    # 白色张量
-    axs[4].imshow(white_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[4].set_title(f'White\nEntropy: {white_tensor_entropy:.2f}')
-
-    # 黑色张量
-    axs[5].imshow(black_tensor.view(64, 64).numpy(), cmap='gray', vmin=0, vmax=255)
-    axs[5].set_title(f'Black\nEntropy: {black_tensor_entropy:.2f}')
-
-    plt.show()
-
-def demo3():
-    import numpy as np
-    import cv2
-    import matplotlib.pyplot as plt
-
-    # 读取图片
-    image = cv2.imread('../imgs/TNO/fuse/ADF/9.bmp', cv2.IMREAD_GRAYSCALE)
-
-    # 转换为 tensor
-    image_tensor = kornia.image_to_tensor(image).float()
-
+def histogram_compare(tensor,title):
+    image = np.clip(tensor.squeeze().detach().numpy() * 255, 0, 255).astype(np.uint8)
+    tensor = tensor.view(1, -1) * 255
     # 使用 numpy 统计直方图
-    hist_np, bin_edges_np = np.histogram(image_tensor.numpy().flatten(), bins=256, range=[0, 256], density=True)
-
+    hist_np, bin_edges_np = np.histogram(tensor.numpy(), bins=256, range=[0, 256], density=True)
+    en_count = -np.sum(hist_np * np.log2(hist_np + 1e-10))
     # 使用 kornia 核密度直方图
-    image_tensor = image_tensor.view(1, -1)
-    bins = torch.linspace(0, 255, 256).to(image_tensor.device)
-    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(1))
-
+    bins = torch.linspace(0, 255, 256).to(tensor.device)
+    sigma_values = [0.01, 0.1, 0.4, 1,8]
+    histogram = [kornia.enhance.histogram(tensor, bins=bins, bandwidth=torch.tensor(s)) for s in sigma_values]
+    en_kernel = [-torch.sum(h * torch.log2(h + 1e-10)) for h in histogram]
     # 作图
-    # plt.figure(figsize=(10, 6))
-
     plt.subplot(2,3,1)
-    print(hist_np)
-    plt.title(f'Numpy, EN={-np.sum(hist_np * np.log2(hist_np + 1e-10))}')
-    plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
-    plt.subplot(2,3,2)
-    plt.title(f'Kornia (sigma = 1), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
-    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-    plt.subplot(2,3,3)
-    plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
-    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-    plt.title('Overlapping')
-    plt.xlabel('Pixel Intensity')
-    plt.ylabel('Normalized Frequency')
-    plt.subplot(2,3,4)
-    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(0.1))
-    plt.title(f'Kornia (sigma = 0.1), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
-    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-    plt.subplot(2,3,5)
-    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(0.4))
-    plt.title(f'Kornia (sigma = 0.4), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
-    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-    plt.subplot(2,3,6)
-    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(2))
-    plt.title(f'Kornia (sigma = 2), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
-    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.imshow(image,cmap='grey')
+    plt.title(title)
+    plt.xticks([]);plt.yticks([])
+    for i in range(len(sigma_values)):
+        plt.subplot(2,3,i+2)
+        plt.title(f"Numpy, EN={format(en_count, '.4f')}\nKornia ("+r"$\sigma$"+f" = {sigma_values[i]}), EN={format(en_kernel[i], '.4f')}")
+        plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
+        plt.plot(histogram[i].squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+        plt.xticks([]);plt.yticks([])
     plt.legend()
-
-    # 展示图像
     plt.show()
 
 def main():
-    demo1()
-    #demo2()
-    # demo3()
+    from torchvision import transforms
+    from torchvision.transforms.functional import to_tensor
+    from PIL import Image
+
+    torch.manual_seed(42)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+
+    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+
+    # print(f'EN(ir):{en(ir)}')
+    # print(f'EN(vis):{en(vis)}')
+    # print(f'EN(fused):{en(fused)}')
+
+    # 假设有一个离散随机变量X，给定它的概率分布p(X)
+    # p_x = np.array([0.5, 0.5])
+    # p_y = np.array([0.3, 0.7])
+    # p_z = np.array([0.0, 1.0])
+    # print(f"E(X={p_x}) = {en(torch.tensor(p_x),is_pdf=True)}")
+    # print(f"E(Y={p_y}) = {en(torch.tensor(p_y),is_pdf=True)}")
+    # print(f"E(Z={p_z}) = {en(torch.tensor(p_z),is_pdf=True)}")
+
+    # 信息熵可视化
+    # vis_entropy()
+
+    # 下面的例子演示图像信息熵在不同类型图像之间的变化。
+    # 通过生成均匀分布、随机分布、纯色、黑白分割等不同特性的图像，
+    # 函数展示了这些图像在信息熵上的差异。
+    # visualize_image_entropy(16)
+    # visualize_image_entropy(64)
+
+    # 下面的例子演示了通过核密度估计与统计的直方图的区别
+    # histogram_compare(ir,'IR Image')
+    # histogram_compare(vis,'VIS Image')
+    # histogram_compare(fused,'Fused Image')
 
 if __name__ == '__main__':
     main()

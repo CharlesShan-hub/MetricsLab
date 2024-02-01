@@ -10,22 +10,74 @@ import kornia
 
 from sklearn.metrics.cluster import mutual_info_score as mi_sklearn
 
+###########################################################################################
+
 __all__ = [
-    'entropy',       # 信息熵
-    'kl_divergence', # kl散度
-    'mi',            # 自己实现的mi
-    'mi_sklearn'     # 不可微分mi，sklearn官方实现
+    'mi',
+    'mi_approach_loss',
+    'mi_metric'
 ]
 
-def entropy(p):
+def mi(image1, image2, bandwidth=0.25, eps=1e-10,normalize=False,show_pic=False):
     """
-    计算给定概率分布的熵
+    Calculate the differentiable mutual information between two images.
+
+    Args:
+        image1 (torch.Tensor): The first input image tensor.
+        image2 (torch.Tensor): The second input image tensor.
+        bandwidth (float, optional): Bandwidth for histogram smoothing. Default is 0.25.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+        normalize (bool, optional): Whether to normalize the pixel values of the images. Default is False.
+        show_pic (bool, optional): Whether to display a histogram plot. Default is False.
+
+    Returns:
+        torch.Tensor: The differentiable mutual information between the two images.
     """
-    entropy = 0
-    for prob in p:
-        if prob > 0:
-            entropy += prob * np.log2(prob)
-    return abs(entropy)
+    # 将图片拉平成一维向量,将一维张量转换为二维张量
+    if normalize == True:
+        x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
+        x2 = ((image2-torch.min(image2))/(torch.max(image2) - torch.min(image2))).view(1,-1) * 255
+    else:
+        x1 = image1.view(1,-1) * 255
+        x2 = image2.view(1,-1) * 255
+
+    # 定义直方图的 bins
+    bins = torch.linspace(0, 255, 256).to(image1.device)
+
+    # 计算二维直方图
+    hist = kornia.enhance.histogram2d(x1, x2, bins, bandwidth=torch.tensor(bandwidth))
+
+    # 计算边缘分布
+    marginal_x = torch.sum(hist, dim=2)
+    marginal_y = torch.sum(hist, dim=1)
+
+    # 计算互信息
+    mask = (hist > eps)
+    en_xy = -torch.sum(hist[mask] * torch.log(hist[mask])) # VIFB里边用的 log，不是 log2
+    mask = (marginal_x != 0)
+    en_x = -torch.sum(marginal_x[mask] * torch.log(marginal_x[mask]))
+    mask = (marginal_y != 0)
+    en_y = -torch.sum(marginal_y[mask] * torch.log(marginal_y[mask]))
+
+    # 可以显示基于核密度与统计的直方图的区别
+    if show_pic == True:
+        hist_np, bin_edges_np = np.histogram(x1.numpy().flatten(), bins=256, range=[0, 256], density=True)
+        plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
+        plt.plot(marginal_x.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+        plt.show()
+
+    return en_x + en_y - en_xy
+
+# 内容相同时互信息最大，采用 1减比值的方法把损失做到 0-1 之间
+def mi_approach_loss(A, F):
+    return torch.abs(1 - mi(A,F) / mi(A,A))
+
+# 与 VIFB 统一
+def mi_metric(A, B, F):
+    w0 = w1 = 1 # VIFB里边没有除 2
+    return w0 * mi(A, F) + w1 * mi(B, F)
+
+###########################################################################################
 
 def kl_divergence(p, q):
     """
@@ -47,7 +99,7 @@ def kl_divergence(p, q):
     return kl_div
 
 
-def mi(x, y, log=False):
+def mi_old(x, y, log=False):
     """
     根据两个序列计算互信息
 
@@ -107,7 +159,7 @@ def mi(x, y, log=False):
 
     return mutual_information_value
 
-def mi(x, y, log=False):
+def mi_old(x, y, log=False):
     """
     根据两个序列计算互信息
 
@@ -152,163 +204,6 @@ def mi(x, y, log=False):
 
 
 
-def mi_differentiable(image1, image2, bandwidth=0.25, eps=1e-10,normalize=False,show_pic=False):
-    # 将图片拉平成一维向量,将一维张量转换为二维张量
-    if normalize == True:
-        x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
-        x2 = ((image2-torch.min(image2))/(torch.max(image2) - torch.min(image2))).view(1,-1) * 255
-    else:
-        x1 = image1.view(1,-1) * 255
-        x2 = image2.view(1,-1) * 255
-
-    # 定义直方图的 bins
-    bins = torch.linspace(0, 255, 256).to(image1.device)
-
-    # 计算二维直方图
-    hist = kornia.enhance.histogram2d(x1, x2, bins, bandwidth=torch.tensor(bandwidth))
-
-    # 计算边缘分布
-    marginal_x = torch.sum(hist, dim=2)
-    marginal_y = torch.sum(hist, dim=1)
-
-    # 计算互信息
-    mask = (hist > eps)
-    en_xy = -torch.sum(hist[mask] * torch.log(hist[mask])) # VIFB里边用的 log，不是 log2
-    mask = (marginal_x != 0)
-    en_x = -torch.sum(marginal_x[mask] * torch.log(marginal_x[mask]))
-    mask = (marginal_y != 0)
-    en_y = -torch.sum(marginal_y[mask] * torch.log(marginal_y[mask]))
-
-    if show_pic == True:
-        hist_np, bin_edges_np = np.histogram(x1.numpy().flatten(), bins=256, range=[0, 256], density=True)
-        plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
-        plt.plot(marginal_x.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-        plt.show()
-
-    return en_x + en_y - en_xy
-
-
-def mi_differentiable_loss(origin,predict):
-    #return torch.exp(-mi_differentiable(x,y))
-    #return torch.abs(1 - mi_differentiable(x,y) / mi_differentiable(x,x))
-    return torch.abs(1 - mi_differentiable(origin,predict) / mi_differentiable(origin,origin))
-
-
-def mi_metric(imgA,imgB,imgF):
-    w0 = w1 = 1 # VIFB里边没有除 2
-    return w0 * mi_differentiable(imgA,imgF) + w1 * mi_differentiable(imgB, imgF)
-
-
-def demo_entropy():
-    # 函数1
-    def function1():
-        # 生成 x 值
-        x_values = np.linspace(0, 1, 100)
-
-        # 计算信息熵
-        entropies = [entropy([x, 1 - x]) for x in x_values]
-
-        # 子图1
-        plt.subplot(2, 2, 1)
-        plt.plot(x_values, entropies)
-        plt.xlabel('x')
-        plt.ylabel('entropy')
-        plt.title('Entropy of (x, 1-x)')
-
-    # 函数2
-    def function2():
-        # 生成 x 和 y 的网格
-        x_values = np.linspace(0, 1, 200)
-        y_values = np.linspace(0, 1, 200)
-        xx, yy = np.meshgrid(x_values, y_values)
-
-        # 计算信息熵
-        entropies = np.zeros_like(xx)
-        for i in range(len(x_values)):
-            for j in range(len(y_values)):
-                entropies[i, j] = entropy([xx[i, j], yy[i, j]])
-
-        # 子图2 - 绘制热图
-        plt.subplot(2, 2, 2)
-
-        # 设置透明度条件
-        alpha_values = np.where(np.isclose(xx + yy, 1, atol=1e-2), 1, 0.2)
-
-        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha_values)
-
-        plt.colorbar()
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.title('Entropy of (x, y)')
-
-    # 函数3
-    def function3():
-        # 生成 x 和 y 的网格
-        x_values = np.linspace(0, 1, 200)
-        y_values = np.linspace(0, 1, 200)
-        xx, yy = np.meshgrid(x_values, y_values)
-
-        # 计算信息熵
-        z_values = 1 - xx - yy
-        entropies = np.zeros_like(z_values)
-        alpha = np.zeros_like(z_values)
-        for i in range(len(x_values)):
-            for j in range(len(y_values)):
-                # 如果 x + y 大于 1，透明度为 0，否则透明度为 1
-                alpha[i,j] = 0 if xx[i, j] + yy[i, j] > 1 else 1
-                entropies[i, j] = entropy([xx[i, j], yy[i, j], z_values[i, j]])
-
-        # 子图3 - 绘制热图
-        plt.subplot(2, 2, 3)
-
-        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha)
-
-        plt.colorbar()
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.title('Entropy of (x, y, 1-x-y)')
-
-    # 函数4
-    def function4():
-        ax = plt.subplot(2, 2, 4, projection='3d')
-        ax.set_title("Entropy of (x, y, z)")
-        # 生成 x, y 的坐标网格
-        x_values = np.linspace(0, 1, 200)
-        y_values = np.linspace(0, 1, 200)
-        xx, yy = np.meshgrid(x_values, y_values)
-
-        # 计算 z 坐标，满足 x + y + z = 1 且 z 大于零
-        zz = np.maximum(0, 1 - xx - yy)
-
-        # 过滤掉 z=0 的部分
-        mask = zz > 0
-        xx = np.where(mask, xx, np.nan)
-        yy = np.where(mask, yy, np.nan)
-        zz = np.where(mask, zz, np.nan)
-
-        # 计算每个点的信息熵
-        entropies = np.array([[entropy([x, y, z]) for x, y, z in zip(row_x, row_y, row_z)] for row_x, row_y, row_z in zip(xx, yy, zz)])
-
-        # 绘制平面，使用信息熵来确定颜色
-        surf = ax.plot_surface(xx, yy, zz, facecolors=plt.cm.viridis(entropies), rstride=5, cstride=5, alpha=0.8)
-        surf.set_facecolor((0, 0, 0, 0))
-
-        # 设置坐标轴标签
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
-
-    # 调整子图之间的间距
-    plt.subplots_adjust(hspace=0.4, wspace=0.2)
-
-    # 调用各个子图的函数绘制图形
-    function1()
-    function2()
-    function3()
-    function4()
-
-    # 显示图形
-    plt.show()
 
 
 def demo_entropy2():
@@ -733,39 +628,19 @@ def demo_mi5():
     print(f" - {vis_tensor.shape} (Vis,Vis,mklearn): ", mi_sklearn(vis_tensor.flatten().numpy(),vis_tensor.flatten().numpy()))
 
 def main():
+    from torchvision import transforms
+    from torchvision.transforms.functional import to_tensor
+    from PIL import Image
 
-  torch.manual_seed(42)  # 设置随机种子
+    torch.manual_seed(42)
 
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    transform = transforms.Compose([transforms.ToTensor()])
 
-  img1_path = '../imgs/RoadScene/vis/1.jpg'
-  img2_path = '../imgs/RoadScene/ir/1.jpg'
-  fused_path = '../imgs/RoadScene/fuse/U2Fusion/1.jpg'
+    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-  transform = transforms.Compose(
-    [
-        transforms.ToTensor(),
-    ]
-  )
 
-  img1 = TF.to_tensor(Image.open(img1_path)).unsqueeze(0).to(device)
-  img2 = TF.to_tensor(Image.open(img2_path)).unsqueeze(0).to(device)
-  fused = TF.to_tensor(Image.open(fused_path)).unsqueeze(0).to(device)
-
-  fused = fused.view(-1).cpu().numpy()
-  img1 = img1.view(-1).cpu().numpy()
-  img2 = img2.view(-1).cpu().numpy()
-
-  # 测试 信息熵
-  # 示例：假设有一个离散随机变量X，给定它的概率分布p(X)
-  #cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-  p_x = np.array([0.5, 0.5])
-  p_y = np.array([0.3, 0.7])
-  p_z = np.array([0.0, 1.0])
-  print("* 信息熵")
-  print(f" - E({p_x}) = {entropy(p_x)}")
-  print(f" - E({p_y}) = {entropy(p_y)}")
-  print(f" - E({p_z}) = {entropy(p_z)}")
 
   # 信息熵绘图案例
   #demo_entropy()

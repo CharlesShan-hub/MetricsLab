@@ -5,14 +5,13 @@ from PIL import Image
 from torchvision import transforms
 import torchvision.transforms.functional as TF
 
-def has_nan_or_has_inf(tensor):
-  # 检查张量中是否有 NaN
-  has_nan = torch.isnan(tensor)
-  print("Has NaN:", has_nan.any().item())
+###########################################################################################
 
-  # 检查张量中是否有无穷值
-  has_inf = torch.isinf(tensor)
-  print("Has Inf:", has_inf.any().item())
+__all__ = [
+    'q_abf',
+    'q_abf_approach_loss',
+    'q_abf_metric'
+]
 
 ''' Q_ABF
   * border_type = 'constant', 为了与 VIFB 一致，但其实 kornia 默认的是 'reflection'
@@ -40,12 +39,6 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
     (gB,aB) = edge_strength_and_orientation(imgB*255.0)
     (gF,aF) = edge_strength_and_orientation(imgF*255.0)
     #return torch.mean(gA)+torch.mean(gB)-2*torch.mean(gF) + torch.mean(aA)+torch.mean(aB)-2*torch.mean(aF)
-    #has_nan_or_has_inf(gA)
-    #has_nan_or_has_inf(aA)
-    #has_nan_or_has_inf(gB)
-    #has_nan_or_has_inf(aB)
-    #has_nan_or_has_inf(gF)
-    #has_nan_or_has_inf(aF)
     #print("2. Edge Strength and Orientation")
     #print(torch.mean(gA),torch.mean(aA),torch.mean(gB),torch.mean(aB),torch.mean(gF),torch.mean(aF))
 
@@ -60,10 +53,6 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
 
     (GAF,AAF) = relative_strength_and_orientation(gA,gF,aA,aF)
     (GBF,ABF) = relative_strength_and_orientation(gB,gF,aB,aF)
-    #has_nan_or_has_inf(GAF)
-    #has_nan_or_has_inf(AAF)
-    #has_nan_or_has_inf(GBF)
-    #has_nan_or_has_inf(ABF)
     #print("3. Relative Strength and Orientation")
     #print(torch.mean(GAF),torch.mean(AAF),torch.mean(GBF),torch.mean(ABF))
 
@@ -77,26 +66,22 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
 
     QAF = edge_strength_and_orientation_preservation_values(GAF,AAF)
     QBF = edge_strength_and_orientation_preservation_values(GBF,ABF)
-    #has_nan_or_has_inf(QAF)
-    #has_nan_or_has_inf(QBF)
     #print("4. Edge Strength and Orientation Preservation Values")
     #print(torch.mean(QAF),torch.mean(QBF))
 
     deno = torch.sum(gA + gB)
     nume = torch.sum(QAF * gA + QBF * gB)
     qabf_value = nume / deno
-    #has_nan_or_has_inf(qabf_value)
 
     return qabf_value
 
+def q_abf_loss(A, B, F):
+    return -q_abf(A, B, F)
 
-def q_abf_loss(imgA, imgB, imgF):
-    return -q_abf(imgA, imgB, imgF)
+def q_abf_metric(A, B, F):
+    return q_abf(A, B, F)
 
-
-def q_abf_metric(imgA,imgB,imgF):
-    return q_abf(imgA, imgB, imgF)
-
+###########################################################################################
 
 def main():
     torch.manual_seed(42)  # 设置随机种子

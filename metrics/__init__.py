@@ -1,16 +1,8 @@
 # 信息论
-from metrics.ce import cross_entropy as ce
-from metrics.ce import cross_entropy_loss as ce_loss
-from metrics.ce import ce_metric
-from metrics.en import entropy as en
-from metrics.en import entropy_loss as en_loss
-from metrics.en import en_metric
-from metrics.mi import mi_differentiable as mi
-from metrics.mi import mi_differentiable_loss as mi_loss
-from metrics.mi import mi_metric
-from metrics.psnr import psnr_kornia as psnr
-from metrics.psnr import psnr_loss_kornia as psnr_loss
-from metrics.psnr import psnr_metric
+from metrics.ce import *
+from metrics.en import *
+from metrics.mi import *
+from metrics.psnr import *
 
 # 结构相似性
 from metrics.ssim import ssim_kornia as ssim

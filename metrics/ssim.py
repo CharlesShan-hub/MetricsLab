@@ -5,9 +5,21 @@ from kornia.metrics import ssim3d as ssim3d_kornia
 from kornia.losses import ssim_loss as ssim_loss_kornia
 from kornia.losses import ssim3d_loss as ssim3d_loss_kornia
 from torch import mean
-def ssim_metric(imgA,imgB,imgF):
+
+###########################################################################################
+
+__all__ = [
+    'ssim',
+    'ssim_approach_loss',
+    'ssim_metric'
+]
+
+def ssim_metric(A, B, F):
     w0 = w1 = 0.5
-    return mean(w0 * ssim_kornia(imgF,imgA,window_size=11) + w1 * ssim_kornia(imgF,imgB,window_size=11))
+    return mean(w0 * ssim_kornia(A, F,window_size=11) + w1 * ssim_kornia(B ,F,window_size=11))
+
+
+###########################################################################################
 
 # pytorch-msssim
 # https://github.com/VainF/pytorch-msssim
