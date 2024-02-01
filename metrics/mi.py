@@ -60,7 +60,7 @@ def mi(x, y, log=False):
 
     互信息的计算公式：
     I(X;Y) = H(X) + H(Y) - H(X,Y)
-    
+
     其中，
     H(X) = - sum p(x) log_2 p(x)
     H(Y) = - sum p(y) log_2 p(y)
@@ -120,7 +120,7 @@ def mi(x, y, log=False):
 
     互信息的计算公式：
     I(X;Y) = H(X) + H(Y) - H(X,Y)
-    
+
     其中，
     H(X) = - sum p(x) log_2 p(x)
     H(Y) = - sum p(y) log_2 p(y)
@@ -150,13 +150,19 @@ def mi(x, y, log=False):
 
     return mutual_info
 
-def mi_differentiable(image1, image2, min_=0, max_=255, bins=256, bandwidth=0.8, eps=1e-10):
+
+
+def mi_differentiable(image1, image2, bandwidth=0.25, eps=1e-10,normalize=False,show_pic=False):
     # 将图片拉平成一维向量,将一维张量转换为二维张量
-    x1 = image1.view(1,-1)
-    x2 = image2.view(1,-1)
+    if normalize == True:
+        x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
+        x2 = ((image2-torch.min(image2))/(torch.max(image2) - torch.min(image2))).view(1,-1) * 255
+    else:
+        x1 = image1.view(1,-1) * 255
+        x2 = image2.view(1,-1) * 255
 
     # 定义直方图的 bins
-    bins = torch.linspace(min_, max_, bins)
+    bins = torch.linspace(0, 255, 256).to(image1.device)
 
     # 计算二维直方图
     hist = kornia.enhance.histogram2d(x1, x2, bins, bandwidth=torch.tensor(bandwidth))
@@ -166,14 +172,20 @@ def mi_differentiable(image1, image2, min_=0, max_=255, bins=256, bandwidth=0.8,
     marginal_y = torch.sum(hist, dim=1)
 
     # 计算互信息
-    en_xy = -torch.sum(hist.view(-1) * torch.log2(hist.view(-1) + eps))
-    en_x = -torch.sum(marginal_x.view(-1) * torch.log2(marginal_x.view(-1) + eps))
-    en_y = -torch.sum(marginal_y.view(-1) * torch.log2(marginal_y.view(-1) + eps))
-    
-    return en_x + en_y - en_xy
+    mask = (hist > eps)
+    en_xy = -torch.sum(hist[mask] * torch.log(hist[mask])) # VIFB里边用的 log，不是 log2
+    mask = (marginal_x != 0)
+    en_x = -torch.sum(marginal_x[mask] * torch.log(marginal_x[mask]))
+    mask = (marginal_y != 0)
+    en_y = -torch.sum(marginal_y[mask] * torch.log(marginal_y[mask]))
 
-    #mutual_information = torch.sum(hist * torch.log2((hist + eps) / (marginal_x.view(1, -1, 1) * marginal_y.view(1, 1, -1) + eps)))
-    #return mutual_information
+    if show_pic == True:
+        hist_np, bin_edges_np = np.histogram(x1.numpy().flatten(), bins=256, range=[0, 256], density=True)
+        plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
+        plt.plot(marginal_x.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+        plt.show()
+
+    return en_x + en_y - en_xy
 
 
 def mi_differentiable_loss(origin,predict):
@@ -183,7 +195,7 @@ def mi_differentiable_loss(origin,predict):
 
 
 def mi_metric(imgA,imgB,imgF):
-    w0 = w1 = 0.5
+    w0 = w1 = 1 # VIFB里边没有除 2
     return w0 * mi_differentiable(imgA,imgF) + w1 * mi_differentiable(imgB, imgF)
 
 
@@ -303,10 +315,10 @@ def demo_entropy2():
     def calculate_entropy_uniform(n):
         # 生成 n 个值为 1 的一维数组
         x = np.ones(n)
-        
+
         # 归一化，使得和为 1
         x_normalized = x / np.sum(x)
-        
+
         # 计算信息熵
         entropy_value = entropy(x_normalized)
 
@@ -315,10 +327,10 @@ def demo_entropy2():
     def calculate_entropy_single_one(n):
         # 生成 n 个值为 0 的一维数组
         x = np.zeros(n)
-        
+
         # 将其中一个值设为 1
         x[0] = 1
-        
+
         # 计算信息熵
         entropy_value = entropy(x)
 
@@ -330,7 +342,7 @@ def demo_entropy2():
         x1 = np.ones(n)
         x1 = x1 / x1.sum()
         x = (x0 + x1) / 2
-        
+
         # 计算信息熵
         entropy_value = entropy(x)
 
@@ -512,7 +524,7 @@ def demo_mi():
         plt.text(sequence_x1.mean(), sequence_x2.mean(), f'MI={mi_value:.2f}', color='white', ha='center', va='center', fontsize=12)
         plt.title('Mutual Information Heatmap')
         plt.show()
-        
+
     n1 = 30; p1 = 0.7
     n2 = 45; p2 = 0.5
     size=5000
@@ -533,7 +545,7 @@ def demo_mi2():
     def binomial_entropy(n, p):
         # 计算二项分布的概率质量函数
         binomial_pmf = np.array([np.math.comb(n, k) * p**k * (1-p)**(n-k) for k in range(n+1)])
-        
+
         # 计算熵
         entropy_value = entropy(binomial_pmf)
 
@@ -559,7 +571,7 @@ def demo_mi2():
     levels = np.linspace(mi_matrix.min(), mi_matrix.max(), num=20)
     plt.contourf(p_values, n_values, mi_matrix, levels=levels, cmap='viridis')
     plt.colorbar(label='Mutual Information')
-    
+
     # 标出特定点(n=25, p=0.75)
     plt.scatter(0.75, 25, color='red', marker='x', label='(25, 0.75)')
     plt.xlabel('Parameter p')
@@ -790,5 +802,5 @@ def main():
   print(f" - MI between Fused and Img2: {result2}")
 
 if __name__ == '__main__':
-  
+
   main()

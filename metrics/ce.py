@@ -4,14 +4,17 @@ import kornia
 
 import matplotlib.pyplot as plt
 # 默认图片都是0到1的小数，所以要乘255
-def cross_entropy(predict, target, bins=torch.linspace(0, 255, 256), bandwidth=torch.tensor(1),eps=1e-8):
-    target = (target*255.0).flatten().unsqueeze(0)
-    predict = (predict*255.0).flatten().unsqueeze(0)
-    h1 = kornia.enhance.histogram(target, bins, bandwidth=bandwidth).flatten() + eps
-    h2 = kornia.enhance.histogram(predict, bins, bandwidth=bandwidth).flatten() + eps
-    return torch.sum(h1 * torch.log2(h1 / (h2 + eps)))
+def cross_entropy(target, predict, bandwidth=0.1, eps=1e-10):
+    predict = predict.view(1, -1) * 255
+    target = target.view(1, -1) * 255
+    bins = torch.linspace(0, 255, 256).to(predict.device)
+    h1 = kornia.enhance.histogram(target, bins=bins, bandwidth=torch.tensor(bandwidth))
+    h2 = kornia.enhance.histogram(predict, bins=bins, bandwidth=torch.tensor(bandwidth))
+    mask = (h1 > eps)&( h2 > eps)
+    return torch.sum(h1[mask] * torch.log2(h1[mask]/(h2[mask])))
 
-cross_entropy_loss = cross_entropy
+def cross_entropy_loss(target, predict, bandwidth=0.1, eps=1e-20):
+    return cross_entropy(target, predict, bandwidth=bandwidth, eps=eps)
 
 def ce_metric(imgA, imgB, imgF):
     w0 = w1 = 0.5

@@ -26,9 +26,9 @@ fuse_tensor1 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model
 fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model='U2Fusion',requires_grad=True)
 
 # Params
-num_epochs = 10
-learning_rate = 0.01
-folder_name = 'APPROACH_Q_CB'
+num_epochs = 20
+learning_rate = 0.001
+folder_name = 'APPROACH_Q_CE'
 torch.manual_seed(42)
 print_interval = 1
 
@@ -61,8 +61,8 @@ for epoch in range(num_epochs):
     #loss_ir = ssim_loss(fuse_tensor2, ir_tensor, window_size=11)
     #loss_vis = rmse_loss(fuse_tensor1, vis_tensor)
     #loss_ir = rmse_loss(fuse_tensor2, ir_tensor)
-    #loss_vis = ce_loss(fuse_tensor1, vis_tensor)
-    #loss_ir = ce_loss(fuse_tensor2, ir_tensor)
+    loss_vis = ce_loss(vis_tensor, fuse_tensor1)
+    loss_ir = ce_loss(ir_tensor, fuse_tensor2)
     #loss_vis = en_loss(fuse_tensor1)
     #loss_ir = en_loss(fuse_tensor2)
     #loss_vis = mi_loss(fuse_tensor1,vis_tensor)
@@ -79,8 +79,8 @@ for epoch in range(num_epochs):
     #loss_ir = sf_loss(fuse_tensor2)
     #loss_vis = q_abf(vis_tensor,vis_tensor,vis_tensor)-q_abf(vis_tensor,vis_tensor,fuse_tensor1)
     #loss_ir = q_abf(ir_tensor,ir_tensor,ir_tensor)-q_abf(ir_tensor,ir_tensor,fuse_tensor2)
-    loss_vis = 1-q_cb(vis_tensor,vis_tensor,fuse_tensor1,mode='frequency') # 相同图片 Qcb 为 1
-    loss_ir = 1-q_cb(ir_tensor,ir_tensor,fuse_tensor2,mode='frequency')
+    # loss_vis = 1-q_cb(vis_tensor,vis_tensor,fuse_tensor1,mode='frequency') # 相同图片 Qcb 为 1
+    # loss_ir = 1-q_cb(ir_tensor,ir_tensor,fuse_tensor2,mode='frequency')
 
     # 反向传播 - Without Computation Graph
     # loss_vis.backward()
@@ -131,8 +131,7 @@ plot_and_save_loss_with_lr(folder_name,loss_array_vis,learning_rate,'vis_loss.pn
 plot_and_save_loss_with_lr(folder_name,loss_array_ir,learning_rate,'ir_loss.png','ir_loss_values.txt')
 
 # Save Metrics
-#plot_metrics(folder_name,metrics_array)  
+#plot_metrics(folder_name,metrics_array)
 
 # Save Result Image
 save_result(folder_name,img_array_vis[-1],img_array_ir[-1],vis_tensor,ir_tensor)
-

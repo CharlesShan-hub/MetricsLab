@@ -3,11 +3,11 @@ import kornia
 import numpy as np
 import matplotlib.pyplot as plt
 
-def entropy(grey_tensor):
-    grey_tensor = grey_tensor.view(1, -1)
+def entropy(grey_tensor,bandwidth=0.1,eps=1e-10):
+    grey_tensor = grey_tensor.view(1, -1) * 255
     bins = torch.linspace(0, 255, 256).to(grey_tensor.device)
-    histogram_result = kornia.enhance.histogram(grey_tensor, bins=bins, bandwidth=torch.tensor(0.1))
-    image_entropy = -torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))
+    histogram = kornia.enhance.histogram(grey_tensor, bins=bins, bandwidth=torch.tensor(bandwidth))
+    image_entropy = -torch.sum(histogram * torch.log2(histogram + eps))
     return image_entropy
 
 def entropy_loss(grey_tensor,grey_scale=256):
@@ -128,8 +128,62 @@ def demo2():
 
     plt.show()
 
+def demo3():
+    import numpy as np
+    import cv2
+    import matplotlib.pyplot as plt
+
+    # 读取图片
+    image = cv2.imread('../imgs/TNO/fuse/ADF/9.bmp', cv2.IMREAD_GRAYSCALE)
+
+    # 转换为 tensor
+    image_tensor = kornia.image_to_tensor(image).float()
+
+    # 使用 numpy 统计直方图
+    hist_np, bin_edges_np = np.histogram(image_tensor.numpy().flatten(), bins=256, range=[0, 256], density=True)
+
+    # 使用 kornia 核密度直方图
+    image_tensor = image_tensor.view(1, -1)
+    bins = torch.linspace(0, 255, 256).to(image_tensor.device)
+    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(1))
+
+    # 作图
+    # plt.figure(figsize=(10, 6))
+
+    plt.subplot(2,3,1)
+    print(hist_np)
+    plt.title(f'Numpy, EN={-np.sum(hist_np * np.log2(hist_np + 1e-10))}')
+    plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
+    plt.subplot(2,3,2)
+    plt.title(f'Kornia (sigma = 1), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
+    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.subplot(2,3,3)
+    plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
+    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.title('Overlapping')
+    plt.xlabel('Pixel Intensity')
+    plt.ylabel('Normalized Frequency')
+    plt.subplot(2,3,4)
+    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(0.1))
+    plt.title(f'Kornia (sigma = 0.1), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
+    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.subplot(2,3,5)
+    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(0.4))
+    plt.title(f'Kornia (sigma = 0.4), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
+    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.subplot(2,3,6)
+    histogram_result = kornia.enhance.histogram(image_tensor, bins=bins, bandwidth=torch.tensor(2))
+    plt.title(f'Kornia (sigma = 2), EN={-torch.sum(histogram_result * torch.log2(histogram_result + 1e-10))}')
+    plt.plot(histogram_result.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
+    plt.legend()
+
+    # 展示图像
+    plt.show()
+
 def main():
-    #demo1() 
-    demo2()
+    demo1()
+    #demo2()
+    # demo3()
+
 if __name__ == '__main__':
     main()

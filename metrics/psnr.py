@@ -3,12 +3,15 @@ from kornia.losses import psnr_loss as psnr_loss_kornia
 import torch
 import torch.nn.functional as F
 
-def psnr(imgA,imgB,imgF,MAX=255,eps=1e-10): # 改造成 VIFB 提出的用于融合的 PSNR
-    _,_,m,n = imgA.shape
-    MSE1 = torch.sum((imgA - imgF)**2)/(m*n)
-    MSE2 = torch.sum((imgB - imgF)**2)/(m*n)
+def psnr(imgA,imgB,imgF,MAX=1): # 改造成 VIFB 提出的用于融合的 PSNR
+    # https://jason-chen-1992.weebly.com/home/-peak-single-to-noise-ratio
+    MSE1 = torch.mean((imgA - imgF)**2)
+    MSE2 = torch.mean((imgB - imgF)**2)
     MSE = (MSE1+MSE2)/2.0
-    return 10*torch.log10(MAX/MSE)
+    return 10*torch.log10(MAX**2/MSE) # 图像融合，MSE 不可能等于零
+
+def psnr_loss(imgA,imgB,imgF,MAX=1):
+    return -psnr(imgA,imgB,imgF,MAX=MAX)
 
 def psnr_metric(imgA,imgB,imgF):
     # w0 = w1 = 0.5
