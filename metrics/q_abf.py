@@ -1,9 +1,5 @@
 import torch
 import kornia
-import torch.nn.functional as F
-from PIL import Image
-from torchvision import transforms
-import torchvision.transforms.functional as TF
 
 ###########################################################################################
 
@@ -13,10 +9,21 @@ __all__ = [
     'q_abf_metric'
 ]
 
-''' Q_ABF
-  * border_type = 'constant', 为了与 VIFB 一致，但其实 kornia 默认的是 'reflection'
-'''
-def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
+def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-10):
+    """
+    Calculate the Q_ABF (Quality Assessment for image Blurred and Fused) metric.
+
+    Args:
+        imgA (torch.Tensor): The first input image tensor.
+        imgB (torch.Tensor): The second input image tensor.
+        imgF (torch.Tensor): The fused image tensor.
+        border_type (str, optional): Type of border extension. Default is 'constant' for adapt VIFB, but
+                in kornia border_type default is 'reflection'
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The Q_ABF metric value.
+    """
     # 参数
     Tg, kg, Dg = 0.9994, -15, 0.5
     Ta, ka, Da = 0.9879, -22, 0.8
@@ -38,7 +45,6 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
     (gA,aA) = edge_strength_and_orientation(imgA*255.0)
     (gB,aB) = edge_strength_and_orientation(imgB*255.0)
     (gF,aF) = edge_strength_and_orientation(imgF*255.0)
-    #return torch.mean(gA)+torch.mean(gB)-2*torch.mean(gF) + torch.mean(aA)+torch.mean(aB)-2*torch.mean(aF)
     #print("2. Edge Strength and Orientation")
     #print(torch.mean(gA),torch.mean(aA),torch.mean(gB),torch.mean(aB),torch.mean(gF),torch.mean(aF))
 
@@ -75,39 +81,34 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-6):
 
     return qabf_value
 
-def q_abf_loss(A, B, F):
-    return -q_abf(A, B, F)
+# 采用相同图片的 q_abf 减去不同图片的 q_abf
+def q_abf_approach_loss(A, F):
+    # return q_abf(A, A, A)-q_abf(A, A, F)
+    # return 1-q_abf(A, A, F)
+    return 0.9748 - q_abf(A, A, F)
 
+# 与 VIFB 统一
 def q_abf_metric(A, B, F):
     return q_abf(A, B, F)
 
 ###########################################################################################
 
 def main():
-    torch.manual_seed(42)  # 设置随机种子
+    from torchvision import transforms
+    from torchvision.transforms.functional import to_tensor
+    from PIL import Image
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.manual_seed(42)
 
-    img1_path = '../imgs/TNO/vis/9.bmp'
-    img2_path = '../imgs/TNO/ir/9.bmp'
-    fused_path = '../imgs/TNO/fuse/U2Fusion/9.bmp'
+    transform = transforms.Compose([transforms.ToTensor()])
 
-    transform = transforms.Compose(
-      [
-          transforms.ToTensor(),
-      ]
-    )
+    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    img1 = TF.to_tensor(Image.open(img1_path)).unsqueeze(0).to(device)
-    img2 = TF.to_tensor(Image.open(img2_path)).unsqueeze(0).to(device)
-    fused = TF.to_tensor(Image.open(fused_path)).unsqueeze(0).to(device)
-
-    print(q_abf(img1,img2,fused))
-    print(q_abf(img1,img1,img1))
-
-    # 逐个检查小函数的梯度
-    #check_gradients(q_abf, (img1,img2,fused))
-
+    print(f'Q_ABF(ir,ir,ir):{q_abf(ir,ir,ir)}')         # 0.9747936129570007
+    print(f'Q_ABF(vis,vis,vis):{q_abf(vis,vis,vis)}')   # 0.9747936129570007
+    print(f'Q_ABF(vis,ir,fused):{q_abf(vis,ir,fused)}') # 0.43425410985946655
 
 if __name__ == '__main__':
-  main()
+    main()

@@ -59,13 +59,13 @@ def en_loss(grey_tensor,grey_scale=256):
 
 def vis_entropy():
     def vis_entropy_with_one_var_1D():
-        # 生成 x 值
+        # 生成 p(x) 值
         x_values = np.linspace(0, 1, 100)
 
-        # 计算信息熵
+        # 计算 {p(x), 1-p(x)} 的信息熵
         entropies = [en(torch.tensor([x,1-x]),is_pdf=True) for x in x_values]
 
-        # 子图1
+        # 生成曲线图
         plt.subplot(2, 2, 1)
         plt.plot(x_values, entropies)
         plt.xlabel('x')
@@ -76,22 +76,18 @@ def vis_entropy():
         # 生成 x 和 y 的网格
         x_values = np.linspace(0, 1, 200)
         y_values = np.linspace(0, 1, 200)
-        xx, yy = np.meshgrid(x_values, y_values)
+        x, y = np.meshgrid(x_values, y_values)
 
         # 计算信息熵
-        entropies = np.zeros_like(xx)
+        entropies = np.zeros_like(x)
         for i in range(len(x_values)):
             for j in range(len(y_values)):
-                entropies[i, j] = en(torch.tensor([xx[i, j], yy[i, j]]),is_pdf=True)
+                entropies[i, j] = en(torch.tensor([x[i, j], y[i, j]]),is_pdf=True)
 
-        # 子图2 - 绘制热图
+        #  绘制热图
         plt.subplot(2, 2, 2)
-
-        # 设置透明度条件
-        alpha_values = np.where(np.isclose(xx + yy, 1, atol=1e-2), 1, 0.2)
-
-        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha_values)
-
+        alpha_values = np.where(np.isclose(x + y, 1, atol=1e-2), 1, 0.2)    # x+y!=的区域设置半透明
+        plt.pcolormesh(x, y, entropies, cmap='viridis', alpha=alpha_values)
         plt.colorbar()
         plt.xlabel('x')
         plt.ylabel('y')
@@ -101,31 +97,27 @@ def vis_entropy():
         # 生成 x 和 y 的网格
         x_values = np.linspace(0, 1, 200)
         y_values = np.linspace(0, 1, 200)
-        xx, yy = np.meshgrid(x_values, y_values)
+        x, y = np.meshgrid(x_values, y_values)
 
         # 计算信息熵
-        z_values = 1 - xx - yy
+        z_values = 1 - x - y
         entropies = np.zeros_like(z_values)
         alpha = np.zeros_like(z_values)
         for i in range(len(x_values)):
             for j in range(len(y_values)):
                 # 如果 x + y 大于 1，透明度为 0，否则透明度为 1
-                alpha[i,j] = 0 if xx[i, j] + yy[i, j] > 1 else 1
-                entropies[i, j] = en(torch.tensor([xx[i, j], yy[i, j], z_values[i, j]]),is_pdf=True)
+                alpha[i,j] = 0 if x[i, j] + y[i, j] > 1 else 1
+                entropies[i, j] = en(torch.tensor([x[i, j], y[i, j], z_values[i, j]]),is_pdf=True)
 
-        # 子图3 - 绘制热图
+        # 绘制热图
         plt.subplot(2, 2, 3)
-
-        plt.pcolormesh(xx, yy, entropies, cmap='viridis', alpha=alpha)
-
+        plt.pcolormesh(x, y, entropies, cmap='viridis', alpha=alpha)
         plt.colorbar()
         plt.xlabel('x')
         plt.ylabel('y')
         plt.title('Entropy of (x, y, 1-x-y)')
 
     def vis_entropy_with_two_var_3D():
-        ax = plt.subplot(2, 2, 4, projection='3d')
-        ax.set_title("Entropy of (x, y, z)")
         # 生成 x, y 的坐标网格
         x_values = np.linspace(0, 1, 200)
         y_values = np.linspace(0, 1, 200)
@@ -141,7 +133,11 @@ def vis_entropy():
         zz = np.where(mask, zz, np.nan)
 
         # 计算每个点的信息熵
-        entropies = np.array([[en(torch.tensor([x, y, z]),is_pdf=True) for x, y, z in zip(row_x, row_y, row_z)] for row_x, row_y, row_z in zip(xx, yy, zz)])
+        entropies = np.array([[en(torch.tensor([x, y, z]), is_pdf=True) for x, y, z in zip(row_x, row_y, row_z)] for row_x, row_y, row_z in zip(xx, yy, zz)])
+
+        # 创建 3D 子图
+        ax = plt.subplot(2, 2, 4, projection='3d')
+        ax.set_title("Entropy of (x, y, z)")
 
         # 绘制平面，使用信息熵来确定颜色
         surf = ax.plot_surface(xx, yy, zz, facecolors=plt.cm.viridis(entropies), rstride=5, cstride=5, alpha=0.8)
@@ -162,6 +158,71 @@ def vis_entropy():
     vis_entropy_with_two_var_3D()
 
     # 显示图形
+    plt.show()
+
+def analyze_entropy_discrepancy():
+    def calculate_entropy_uniform(n):
+        # 生成 n 个值为 1 的一维数组
+        x = np.ones(n)
+
+        # 归一化，使得和为 1
+        x_normalized = x / np.sum(x)
+
+        # 计算信息熵
+        entropy_value = en(torch.tensor(x_normalized),is_pdf=True)
+
+        return entropy_value
+
+    def calculate_entropy_single_one(n):
+        # 生成 n 个值为 0 的一维数组
+        x = np.zeros(n)
+
+        # 将其中一个值设为 1
+        x[0] = 1
+
+        # 计算信息熵
+        entropy_value = en(torch.tensor(x),is_pdf=True)
+
+        return entropy_value
+
+    def calculate_entropy_mid(n):
+        x0 = np.zeros(n)
+        x0[0] = 1
+        x1 = np.ones(n)
+        x1 = x1 / x1.sum()
+        x = (x0 + x1) / 2
+
+        # 计算信息熵
+        entropy_value = en(torch.tensor(x),is_pdf=True)
+
+        return entropy_value
+
+    # 参数范围
+    n_values = np.arange(1, 64*64)
+    max_entropy = [calculate_entropy_uniform(n) for n in n_values]
+    mix_entropy = [calculate_entropy_single_one(n) for n in n_values]
+    mid_dis_entropy = [calculate_entropy_mid(n) for n in n_values]
+    per = [mid_value / max_value for (mid_value, max_value) in zip(mid_dis_entropy, max_entropy)]
+
+    # 绘制图表
+    plt.figure(figsize=(5, 12))
+
+    plt.subplot(2, 1, 1)
+    plt.plot(n_values, max_entropy, label='Uniform Distribution')
+    plt.plot(n_values, mix_entropy, label='Single 1, Rest 0s')
+    plt.plot(n_values, mid_dis_entropy, label='Mid of Center and Single 1')
+    plt.xlabel('Parameter n')
+    plt.ylabel('Entropy')
+    plt.title('Entropy vs. n for Different Sequences')
+    plt.legend()
+
+    plt.subplot(2, 1, 2)
+    plt.plot(n_values, per)
+    plt.xlabel('Parameter n')
+    plt.ylabel('Entropy Ratio')
+    plt.title(f'Entropy Ratio vs. n for 1/2 Distance')
+
+    plt.tight_layout()
     plt.show()
 
 def visualize_image_entropy(size):
@@ -243,9 +304,9 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    # print(f'EN(ir):{en(ir)}')
-    # print(f'EN(vis):{en(vis)}')
-    # print(f'EN(fused):{en(fused)}')
+    print(f'EN(ir):{en(ir)}')
+    print(f'EN(vis):{en(vis)}')
+    print(f'EN(fused):{en(fused)}')
 
     # 假设有一个离散随机变量X，给定它的概率分布p(X)
     # p_x = np.array([0.5, 0.5])
@@ -255,8 +316,16 @@ def main():
     # print(f"E(Y={p_y}) = {en(torch.tensor(p_y),is_pdf=True)}")
     # print(f"E(Z={p_z}) = {en(torch.tensor(p_z),is_pdf=True)}")
 
-    # 信息熵可视化
+    # 信息熵可视化，包含有四个小图
+    # 1. 生成 p(x) 值的一维空间，计算(x, 1-x)的信息熵，曲线图展示信息熵随着 x 变化的趋势
+    # 2. 在二维空间生成 x 和 y 的网格，计算(x, 1-x)的信息熵，通过热图展示信息熵在不同 x 和 y 值的变化
+    # 3. 在二维空间生成 x 和 y 的网格，计算(x, y, 1-x-y)的信息熵，通过热图展示信息熵在不同 x 和 y 值的变化，透明度区分满足条件 x + y = 1 的区域
+    # 4. 在三维空间生成 x、y 的坐标网格，计算(x, y, 1-x-y)的信息熵，绘制三维平面，使用信息熵来确定颜色，展示信息熵在三个变量上的分布情况
     # vis_entropy()
+
+    # 根据上面的信息熵可视化，我们发现三维的空间中，值比较高的部分似乎二维的更多
+    # 我们计算不同维度的信息熵的最大值最小值，以及在可视化中“中间”位置的点的信息熵
+    # analyze_entropy_discrepancy()
 
     # 下面的例子演示图像信息熵在不同类型图像之间的变化。
     # 通过生成均匀分布、随机分布、纯色、黑白分割等不同特性的图像，

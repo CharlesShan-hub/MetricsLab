@@ -1,7 +1,5 @@
 import torch
 import kornia
-import numpy as np
-import matplotlib.pyplot as plt
 
 ###########################################################################################
 
@@ -11,15 +9,50 @@ __all__ = [
     'sf_metric'
 ]
 
-def standard_frequency(tensor,eps=1e-10): # 默认输入的是 0-1 的浮点数
+def sf(tensor,eps=1e-10): # 默认输入的是 0-1 的浮点数
+    """
+    Calculate the standard frequency of a tensor.
+
+    Args:
+        tensor (torch.Tensor): Input tensor, assumed to be in the range [0, 1].
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The standard frequency of the input tensor.
+    """
+    # 使用 Sobel 算子计算水平和垂直梯度
     grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]], dtype=torch.float32).unsqueeze(0),padding='valid')
     grad_y = kornia.filters.filter2d(tensor,torch.tensor([[1],[-1]], dtype=torch.float32).unsqueeze(0),padding='valid')
+
+    # 计算梯度的幅度
     return torch.sqrt(torch.mean(grad_x**2) + torch.mean(grad_y**2) + eps) * 255.0  # 与 VIFB 统一，需要乘 255
 
-def standard_frequency_loss(tensor):
-    return -standard_frequency(tensor)
+# 如果两幅图相等，SF 会一致
+def sf_approach_loss(A, F):
+    return torch.abs(sf(A) - sf(F))
 
+# 与 VIFB 统一
 def sf_metric(A, B, F):
-    return standard_frequency(F)
+    return sf(F)
 
 ###########################################################################################
+
+def main():
+    from torchvision import transforms
+    from torchvision.transforms.functional import to_tensor
+    from PIL import Image
+
+    torch.manual_seed(42)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+
+    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+
+    print(f'SF(ir):{sf(ir)}')
+    print(f'SF(vis):{sf(vis)}')
+    print(f'SF(fused):{sf(fused)}')
+
+if __name__ == '__main__':
+    main()

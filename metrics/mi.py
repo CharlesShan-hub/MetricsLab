@@ -1,24 +1,16 @@
 import torch
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.stats import binom,norm,gaussian_kde,entropy
-from PIL import Image
-from torchvision import transforms
-import torchvision.transforms.functional as TF
 import kornia
-
 from sklearn.metrics.cluster import mutual_info_score as mi_sklearn
 
 ###########################################################################################
 
 __all__ = [
-    'mi',
+    'mi','mi_sklearn',
     'mi_approach_loss',
     'mi_metric'
 ]
 
-def mi(image1, image2, bandwidth=0.25, eps=1e-10,normalize=False,show_pic=False):
+def mi(image1, image2, bandwidth=0.25, eps=1e-10, normalize=False, show_pic=False):
     """
     Calculate the differentiable mutual information between two images.
 
@@ -78,6 +70,10 @@ def mi_metric(A, B, F):
     return w0 * mi(A, F) + w1 * mi(B, F)
 
 ###########################################################################################
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import binom,norm,gaussian_kde,entropy
 
 def kl_divergence(p, q):
     """
@@ -202,73 +198,6 @@ def mi_old(x, y, log=False):
 
     return mutual_info
 
-
-
-
-
-def demo_entropy2():
-    def calculate_entropy_uniform(n):
-        # 生成 n 个值为 1 的一维数组
-        x = np.ones(n)
-
-        # 归一化，使得和为 1
-        x_normalized = x / np.sum(x)
-
-        # 计算信息熵
-        entropy_value = entropy(x_normalized)
-
-        return entropy_value
-
-    def calculate_entropy_single_one(n):
-        # 生成 n 个值为 0 的一维数组
-        x = np.zeros(n)
-
-        # 将其中一个值设为 1
-        x[0] = 1
-
-        # 计算信息熵
-        entropy_value = entropy(x)
-
-        return entropy_value
-
-    def calculate_entropy_mid(n):
-        x0 = np.zeros(n)
-        x0[0] = 1
-        x1 = np.ones(n)
-        x1 = x1 / x1.sum()
-        x = (x0 + x1) / 2
-
-        # 计算信息熵
-        entropy_value = entropy(x)
-
-        return entropy_value
-    # 参数范围
-    n_values = np.arange(1, 64*64)
-    max_entropy = [calculate_entropy_uniform(n) for n in n_values]
-    mix_entropy = [calculate_entropy_single_one(n) for n in n_values]
-    mid_place_entropy = [calculate_entropy_mid(n) for n in n_values]
-    per = [mid_value / max_value for (mid_value, max_value) in zip(mid_place_entropy, max_entropy)]
-
-    # 绘制图表
-    plt.figure(figsize=(5, 12))
-
-    plt.subplot(2, 1, 1)
-    plt.plot(n_values, max_entropy, label='Uniform Distribution')
-    plt.plot(n_values, mix_entropy, label='Single 1, Rest 0s')
-    plt.plot(n_values, mid_place_entropy, label='Mid of Center and Single 1')
-    plt.xlabel('Parameter n')
-    plt.ylabel('Entropy')
-    plt.title('Entropy vs. n for Different Sequences')
-    plt.legend()
-
-    plt.subplot(2, 1, 2)
-    plt.plot(n_values, per)
-    plt.xlabel('Parameter n')
-    plt.ylabel('Entropy Ratio')
-    plt.title(f'Entropy Ratio vs. n for 1/2 Distance')
-
-    plt.tight_layout()
-    plt.show()
 
 
 def demo_kl_divergence():
@@ -583,28 +512,44 @@ def demo_mi4():
     # 显示图形
     plt.show()
 
+def main():
+    from torchvision import transforms
+    from torchvision.transforms.functional import to_tensor
+    from PIL import Image
 
-def demo_mi5():
+    # torch.manual_seed(42)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+
+    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+
+    print(f'* MI(ir,ir):{mi(ir,ir)}')
+    print(f'* MI(vis,vis):{mi(vis,vis)}')
+    print(f'* MI(ir,fused):{mi(ir,fused)}')
+    print(f'* MI(vis,fused):{mi(vis,fused)}')
+
     print("* 两随机图像的互信息：")
     for size in [64,128,256,512]:
         random_tensor1 = torch.randint(0, 256, size=(1, 1, size, size), dtype=torch.uint8)
         random_tensor2 = torch.randint(0, 256, size=(1, 1, size, size), dtype=torch.uint8)
-        print(f" - {size} x {size} (self): ", mi_differentiable(random_tensor1,random_tensor2).item())
+        print(f" - {size} x {size} (self): ", mi(random_tensor1/255.0,random_tensor2/255.0).item())
         print(f" - {size} x {size} (mklearn): ", mi_sklearn(random_tensor1.flatten().numpy(),random_tensor2.flatten().numpy()))
     print("* 随机图像与纯色图像的互信息：")
     for size in [64,128,256,512]:
         black_tensor = torch.ones(1, 1, size, size) * 0
-        grey_tensor = torch.ones(1, 1, size, size) * 127
+        grey_tensor = torch.ones(1, 1, size, size) * 12
         white_tensor = torch.ones(1, 1, size, size) * 255
         random_tensor = torch.randint(0, 256, size=(1, 1, size, size), dtype=torch.uint8)
-        print(f" - {size} x {size} (black,self): ", mi_differentiable(black_tensor,random_tensor).item())
+        print(f" - {size} x {size} (black,self): ", mi(black_tensor/255.0,random_tensor/255.0).item())
         print(f" - {size} x {size} (black,mklearn): ", mi_sklearn(black_tensor.flatten().numpy(),random_tensor.flatten().numpy()))
-        print(f" - {size} x {size} (grey,self): ", mi_differentiable(grey_tensor,random_tensor).item())
+        print(f" - {size} x {size} (grey,self): ", mi(grey_tensor/255.0,random_tensor/255.0).item())
         print(f" - {size} x {size} (grey,mklearn): ", mi_sklearn(grey_tensor.flatten().numpy(),random_tensor.flatten().numpy()))
-        print(f" - {size} x {size} (white,self): ", mi_differentiable(white_tensor,random_tensor).item())
+        print(f" - {size} x {size} (white,self): ", mi(white_tensor/255.0,random_tensor/255.0).item())
         print(f" - {size} x {size} (white,mklearn): ", mi_sklearn(white_tensor.flatten().numpy(),random_tensor.flatten().numpy()))
     print("* (随机，随机)、(随机，可见光)互信息比较：")
-    vis_tensor = TF.to_tensor(Image.open('../resources/imgs/vis/1.jpg')).unsqueeze(0)
+    vis_tensor = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
     vis_tensor = torch.clamp(torch.mul(vis_tensor, 255), 0, 255).to(torch.uint8)
     random_tensor1 = torch.randint(0, 256, size=vis_tensor.shape, dtype=torch.uint8)
     random_tensor2 = torch.randint(0, 256, size=vis_tensor.shape, dtype=torch.uint8)
@@ -612,13 +557,13 @@ def demo_mi5():
     integer_tensor = torch.arange(256)# 使用torch.arange生成0到255的整数
     filled_tensor = integer_tensor.repeat(total_elements // 256 + 1)[:total_elements].view(vis_tensor.shape)
     shuffled_tensor = filled_tensor.flatten().gather(0, torch.randperm(total_elements)).view(vis_tensor.shape)
-    print(f" - {vis_tensor.shape} (R,R,self): ", mi_differentiable(random_tensor1,random_tensor2).item())
-    print(f" - {vis_tensor.shape} (R,Vis,self): ", mi_differentiable(random_tensor1,vis_tensor).item())
-    print(f" - {vis_tensor.shape} (Uniform,Vis,self): ", mi_differentiable(filled_tensor,vis_tensor).item())
-    print(f" - {vis_tensor.shape} (Uniform,Uniform,self): ", mi_differentiable(filled_tensor,filled_tensor).item())
-    print(f" - {vis_tensor.shape} (Uniform,Uniform',self): ", mi_differentiable(filled_tensor,shuffled_tensor).item())
-    print(f" - {vis_tensor.shape} (Uniform',Uniform',self): ", mi_differentiable(shuffled_tensor,shuffled_tensor).item())
-    print(f" - {vis_tensor.shape} (Vis,Vis,self): ", mi_differentiable(vis_tensor,vis_tensor).item())
+    print(f" - {vis_tensor.shape} (R,R,self): ", mi(random_tensor1/255.0,random_tensor2/255.0).item())
+    print(f" - {vis_tensor.shape} (R,Vis,self): ", mi(random_tensor1/255.0,vis_tensor/255.0).item())
+    print(f" - {vis_tensor.shape} (Uniform,Vis,self): ", mi(filled_tensor/255.0,vis_tensor/255.0).item())
+    print(f" - {vis_tensor.shape} (Uniform,Uniform,self): ", mi(filled_tensor/255.0,filled_tensor/255.0).item())
+    print(f" - {vis_tensor.shape} (Uniform,Uniform',self): ", mi(filled_tensor/255.0,shuffled_tensor/255.0).item())
+    print(f" - {vis_tensor.shape} (Uniform',Uniform',self): ", mi(shuffled_tensor/255.0,shuffled_tensor/255.0).item())
+    print(f" - {vis_tensor.shape} (Vis,Vis,self): ", mi(vis_tensor/255.0,vis_tensor/255.0).item())
     print(f" - {vis_tensor.shape} (R,R,mklearn): ", mi_sklearn(random_tensor1.flatten().numpy(),random_tensor2.flatten().numpy()))
     print(f" - {vis_tensor.shape} (R,Vis,mklearn): ", mi_sklearn(random_tensor1.flatten().numpy(),vis_tensor.flatten().numpy()))
     print(f" - {vis_tensor.shape} (Uniform,Vis,mklearn): ", mi_sklearn(filled_tensor.flatten().numpy(),vis_tensor.flatten().numpy()))
@@ -627,54 +572,35 @@ def demo_mi5():
     print(f" - {vis_tensor.shape} (Uniform',Uniform',mklearn): ", mi_sklearn(shuffled_tensor.flatten().numpy(),shuffled_tensor.flatten().numpy()))
     print(f" - {vis_tensor.shape} (Vis,Vis,mklearn): ", mi_sklearn(vis_tensor.flatten().numpy(),vis_tensor.flatten().numpy()))
 
-def main():
-    from torchvision import transforms
-    from torchvision.transforms.functional import to_tensor
-    from PIL import Image
 
-    torch.manual_seed(42)
+    # 测试 kl_divergence
+    # p = [0.4, 0.3, 0.2, 0.1]
+    # q = [0.1, 0.2, 0.3, 0.4]
+    # print("* KL散度值")
+    # print(f" - p={p}, q={q}, KL散度值为: {kl_divergence(p, q)}")
 
-    transform = transforms.Compose([transforms.ToTensor()])
+    # kl_divergence案例
+    #demo_kl_divergence()
 
-    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
-    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
-    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+    # 测试 自己实现的 MI 指标
+    # print("* MI")
+    # x = [0, 1, 0, 1, 0, 1]; y = [0, 1, 1, 0, 1, 0]
+    # print(f" - MI between {x} and {y}: {mi(x,y,log=True)}")
+    # x = [0, 1]; y = [1, 0]
+    # print(f" - MI between {x} and {y}: {mi(x,y,log=True)}")
 
+    # 互信息案例
+    #demo_mi()
+    #demo_mi2()
+    #demo_mi3()
+    #demo_mi4()
 
-
-  # 信息熵绘图案例
-  #demo_entropy()
-  #demo_entropy2()
-
-  # 测试 kl_divergence
-  p = [0.4, 0.3, 0.2, 0.1]
-  q = [0.1, 0.2, 0.3, 0.4]
-  print("* KL散度值")
-  print(f" - p={p}, q={q}, KL散度值为: {kl_divergence(p, q)}")
-
-  # kl_divergence案例
-  #demo_kl_divergence()
-
-  # 测试 自己实现的 MI 指标
-  print("* MI")
-  x = [0, 1, 0, 1, 0, 1]; y = [0, 1, 1, 0, 1, 0]
-  print(f" - MI between {x} and {y}: {mi(x,y,log=True)}")
-  x = [0, 1]; y = [1, 0]
-  print(f" - MI between {x} and {y}: {mi(x,y,log=True)}")
-
-  # 互信息案例
-  #demo_mi()
-  #demo_mi2()
-  #demo_mi3()
-  #demo_mi4()
-  demo_mi5()
-
-  # 测试 sklearn实现的 MI 指标
-  result1 = mi_sklearn(fused, img1)
-  result2 = mi_sklearn(fused, img2)
-  print("* MI")
-  print(f" - MI between Fused and Img1: {result1}")
-  print(f" - MI between Fused and Img2: {result2}")
+    # 测试 sklearn实现的 MI 指标
+    # result1 = mi_sklearn(fused, img1)
+    # result2 = mi_sklearn(fused, img2)
+    # print("* MI")
+    # print(f" - MI between Fused and Img1: {result1}")
+    # print(f" - MI between Fused and Img2: {result2}")
 
 if __name__ == '__main__':
 
