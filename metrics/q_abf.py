@@ -40,7 +40,6 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-10):
         #orientation[gx == 0] = torch.pi / 2 # Before
         orientation[torch.abs(gx) < eps] = torch.pi / 2 # Improve
         return (magnitude,orientation)
-        #return (magnitude,magnitude)
 
     (gA,aA) = edge_strength_and_orientation(imgA*255.0)
     (gB,aB) = edge_strength_and_orientation(imgB*255.0)
@@ -64,10 +63,10 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-10):
 
     # 边缘强度和方向保留值
     def edge_strength_and_orientation_preservation_values(G_F,A_F):
-        #Qg = Tg / (1 + torch.exp(kg * (G_F - Dg)))
-        #Qa = Ta / (1 + torch.exp(ka * (A_F - Da)))
-        Qg = Tg / (1 + torch.exp(torch.clamp(kg * (G_F - Dg), min=-20, max=20))) # Improve
-        Qa = Ta / (1 + torch.exp(torch.clamp(ka * (A_F - Da), min=-20, max=20))) # Improve
+        Qg = Tg / (1 + torch.exp(kg * (G_F - Dg)))
+        Qa = Ta / (1 + torch.exp(ka * (A_F - Da)))
+        # Qg = Tg / (1 + torch.exp(torch.clamp(kg * (G_F - Dg), min=-20, max=20))) # Improve
+        # Qa = Ta / (1 + torch.exp(torch.clamp(ka * (A_F - Da), min=-20, max=20))) # Improve
         return Qg * Qa
 
     QAF = edge_strength_and_orientation_preservation_values(GAF,AAF)

@@ -107,7 +107,7 @@ def contrast_sensitivity_filtering_freq(im, mode='frequency'):
     else:
         raise Exception("mode should only be `spatial` or `frequency`")
 
-def q_cb(imgA, imgB, imgF, border_type='constant', mode='frequency', normalize=True):
+def q_cb(imgA, imgB, imgF, border_type='constant', mode='frequency', normalize=False):
     """
     Calculate the Q_CB (Quality Assessment for image Combined with Blurred and Fused) metric.
 
@@ -124,9 +124,6 @@ def q_cb(imgA, imgB, imgF, border_type='constant', mode='frequency', normalize=T
     """
     # mode = 'spatial', mode = 'frequency'
     # Normalize
-    #imgF.requires_grad = True
-
-    # return torch.mean(imgA-imgF)
     if normalize:
         imgA = _normalize(imgA)
         imgB = _normalize(imgB)
@@ -206,7 +203,9 @@ def q_cb_approach_loss(A, F):
 
 # 与 VIFB 统一
 def q_cb_metric(A, B, F):
-    return q_cb(A, B, F)
+    # 论文方案mode是frequency，结果复现较为准确, 改成spatial会明显单提速，但是误差提高
+    # 论文方案normalize=True
+    return q_cb(A, B, F, border_type='constant', mode='frequency', normalize=True)
 
 ###########################################################################################
 

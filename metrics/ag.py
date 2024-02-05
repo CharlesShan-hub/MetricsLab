@@ -32,7 +32,7 @@ def ag(tensor, eps=1e-10): # 默认输入的是 0-1 的浮点数
     s = torch.sqrt((grad_x ** 2 + grad_y ** 2 + eps)/2)
 
     # 返回 AG 值
-    return torch.sum(s) / ((tensor.shape[2] - 1) * (tensor.shape[3] - 1)) * 255.0 # 与 VIFB 统一，需要乘 255
+    return torch.sum(s) / ((tensor.shape[2] - 1) * (tensor.shape[3] - 1))
 
 # 两张图一样，平均梯度会相等
 def ag_approach_loss(A, F):
@@ -40,7 +40,7 @@ def ag_approach_loss(A, F):
 
 # 与 VIFB 统一
 def ag_metric(A, B, F):
-    return ag(F)
+    return ag(F) * 255.0 # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################
 

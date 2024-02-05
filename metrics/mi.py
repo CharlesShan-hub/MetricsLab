@@ -10,7 +10,7 @@ __all__ = [
     'mi_metric'
 ]
 
-def mi(image1, image2, bandwidth=0.25, eps=1e-10, normalize=False, show_pic=False):
+def mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
     """
     Calculate the differentiable mutual information between two images.
 
@@ -20,7 +20,6 @@ def mi(image1, image2, bandwidth=0.25, eps=1e-10, normalize=False, show_pic=Fals
         bandwidth (float, optional): Bandwidth for histogram smoothing. Default is 0.25.
         eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
         normalize (bool, optional): Whether to normalize the pixel values of the images. Default is False.
-        show_pic (bool, optional): Whether to display a histogram plot. Default is False.
 
     Returns:
         torch.Tensor: The differentiable mutual information between the two images.
@@ -51,20 +50,13 @@ def mi(image1, image2, bandwidth=0.25, eps=1e-10, normalize=False, show_pic=Fals
     mask = (marginal_y != 0)
     en_y = -torch.sum(marginal_y[mask] * torch.log(marginal_y[mask]))
 
-    # 可以显示基于核密度与统计的直方图的区别
-    if show_pic == True:
-        hist_np, bin_edges_np = np.histogram(x1.numpy().flatten(), bins=256, range=[0, 256], density=True)
-        plt.plot(bin_edges_np[:-1], hist_np, color='blue', label='Numpy Histogram')
-        plt.plot(marginal_x.squeeze().detach().numpy(), color='orange', label='Kornia Histogram')
-        plt.show()
-
     return en_x + en_y - en_xy
 
 # 内容相同时互信息最大，采用 1减比值的方法把损失做到 0-1 之间
 def mi_approach_loss(A, F):
     return torch.abs(1 - mi(A,F) / mi(A,A))
 
-# 与 VIFB 统一
+# 与调整过的 VIFB 统一（传入的图片未进行normalize）
 def mi_metric(A, B, F):
     w0 = w1 = 1 # VIFB里边没有除 2
     return w0 * mi(A, F) + w1 * mi(B, F)

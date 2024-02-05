@@ -62,10 +62,19 @@ def main():
     vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+    rand = torch.randint(0, 255, size=fused.shape, dtype=torch.uint8)/255.0
 
-    print(f'CE(ir,ir):{ce(ir,ir)}')
-    print(f'CE(ir,vis):{ce(ir,vis)}')
+    print("'Distance' with x and ir")
+    print(f'CE(ir,ir):   {ce(ir,ir)}')
+    print(f'CE(ir,vis):  {ce(ir,vis)}')
     print(f'CE(ir,fused):{ce(ir,fused)}')
+
+    print("\nIf fused is fused | ir | vis  | average | rand")
+    print(f'[Fused = fused]   CE(ir,fused)+CE(vis,fused):    {ce(ir,fused)+ce(vis,fused)}')
+    print(f'[Fused = ir]      CE(ir,ir)+CE(vis,ir):          {ce(ir,ir)+ce(vis,ir)}')
+    print(f'[Fused = vis]     CE(ir,vis)+CE(vis,vis):        {ce(ir,vis)+ce(vis,vis)}')
+    print(f'[Fused = average] CE(ir,arverge)+CE(vis,arverge):{ce(ir,(vis+ir)/2)+ce(vis,(vis+ir)/2)}')
+    print(f'[Fused = rand]    CE(ir,rand)+CE(vis,rand):      {ce(ir,rand)+ce(vis,rand)}')
 
 
 if __name__ == '__main__':

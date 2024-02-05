@@ -41,7 +41,7 @@ def psnr_metric(A, B, F):
     # return w0 * psnr_kornia(imgF,imgA,max_val=1) + w1 * psnr_kornia(imgF,imgB,max_val=1)
     # return w0 * psnr_kornia(imgF*255,imgA*255,max_val=255) + w1 * psnr_kornia(imgF*255,imgB*255,max_val=255) # 为了与VIFB 统一
     # 发现原来 VIFB 里边的两个 MAE 竟然在一个 log 里边！所以不能分开算两个 PSNR 再求平均。
-    return psnr(A, B, F)
+    return psnr(A, B, F, MAX=1) # 0-1与 0-255 的输入进去只要 MAX 设置对，结果一样
 
 ###########################################################################################
 
@@ -59,7 +59,9 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'PSNR(ir,ir,ir):{psnr(ir,ir,ir)}')
-    print(f'PSNR(ir,vis,fused):{psnr(ir,vis,fused)}')
+    print(f'PSNR(vis,vis,vis):{psnr(vis,vis,vis)}')
+    print(f'PSNR(ir,vis,fused):{psnr(ir,vis,fused,MAX=1)}')
+    print(f'PSNR(ir,vis,fused):{psnr(ir*255,vis*255,fused*255,MAX=255)}')
 
 
 if __name__ == '__main__':

@@ -20,12 +20,12 @@ def sf(tensor,eps=1e-10): # 默认输入的是 0-1 的浮点数
     Returns:
         torch.Tensor: The standard frequency of the input tensor.
     """
-    # 使用 Sobel 算子计算水平和垂直梯度
-    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]], dtype=torch.float32).unsqueeze(0),padding='valid')
-    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[1],[-1]], dtype=torch.float32).unsqueeze(0),padding='valid')
+    # 使用 Sobel 算子计算水平和垂直梯度 - Old
+    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]]).unsqueeze(0),padding='valid')
+    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[1],[-1]]).unsqueeze(0),padding='valid')
 
     # 计算梯度的幅度
-    return torch.sqrt(torch.mean(grad_x**2) + torch.mean(grad_y**2) + eps) * 255.0  # 与 VIFB 统一，需要乘 255
+    return torch.sqrt(torch.mean(grad_x**2) + torch.mean(grad_y**2) + eps)
 
 # 如果两幅图相等，SF 会一致
 def sf_approach_loss(A, F):
@@ -33,7 +33,7 @@ def sf_approach_loss(A, F):
 
 # 与 VIFB 统一
 def sf_metric(A, B, F):
-    return sf(F)
+    return sf(F) * 255.0  # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################
 

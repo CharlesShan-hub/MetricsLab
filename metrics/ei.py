@@ -29,7 +29,7 @@ def ei(tensor,border_type='replicate',eps=1e-10): # 默认输入的是 0-1 的�
     s = torch.sqrt(grad_x ** 2 + grad_y ** 2 + eps)
 
     # 返回 EI 值
-    return torch.mean(s) * 255 # 与 VIFB 统一，需要乘 255
+    return torch.mean(s)
 
 # 如果两幅图相等，EI 会一致
 def ei_approach_loss(A, F):
@@ -37,7 +37,7 @@ def ei_approach_loss(A, F):
 
 # 与 VIFB 统一
 def ei_metric(A, B, F):
-    return ei(F)
+    return ei(F) * 255 # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################
 

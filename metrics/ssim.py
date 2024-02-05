@@ -18,8 +18,8 @@ def ssim_approach_loss(img1, img2, window_size=11, max_val=1.0, eps=1e-12, reduc
 
 # 与 VIFB 统一
 def ssim_metric(A, B, F):
-    w0 = w1 = 0.5
-    return torch.mean(w0 * ssim(A, F,window_size=11) + w1 * ssim(B ,F,window_size=11))
+    w0 = w1 = 0.5 # VIFB 忘了除二
+    return torch.mean(w0 * ssim(A, F,window_size=11) + w1 * ssim(B ,F,window_size=11)) # 论文的窗大小就是 11
 
 ###########################################################################################
 
