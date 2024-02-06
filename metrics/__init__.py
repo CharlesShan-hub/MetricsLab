@@ -20,9 +20,11 @@ from metrics.psnr import *     # VIFB - 峰值信噪比
 from metrics.ssim import *     # VIFB - 结构相似度测量
 from metrics.ms_ssim import *  # Tang - 多尺度结构相似度测量
 from metrics.q_w import *      # MEFB - 利用 SSIM 的指标
+from metrics.q_c import *      # MEFB - Cvejic
+from metrics.q_y import *      # MEFB - Yang
+from metrics.mse import *     # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
 # from metrics.ergas import *    # Many
-# from metrics.sam import *      # Many
 
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
@@ -32,6 +34,9 @@ from metrics.ei import *       # VIFB - 边缘强度
 from metrics.sd import *       # VIFB - 标准差
 from metrics.sf import *       # VIFB - 空间频率
 from metrics.q_abf import *    # VIFB - 基于梯度的融合性能
+from metrics.eva import *      # Zhihu - 点锐度
+from metrics.asm import *      # Zhihu - 角二阶矩 - 不可微!!!
+from metrics.sam import *      # Zhihu - 光谱角测度
 
 # 视觉感知
 from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
@@ -49,8 +54,6 @@ from metrics.scd import *      # Tang - 差异相关和
 # from metrics.q_sf import *     #
 # from metrics.q_mi import *     #
 # from metrics.q_s import *      #
-# from metrics.q_y import *      #
-# from metrics.q_c import *      #
 # from metrics.mi_abf import *   #
 # from metrics.viff import *     #
 # from metrics.q_p import *      #

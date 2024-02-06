@@ -4,19 +4,29 @@ import kornia
 ###########################################################################################
 
 __all__ = [
-    'vif',
-    'vif_approach_loss',
-    'vif_metric'
+    'sam',
+    'sam_approach_loss',
+    'sam_metric'
 ]
 
-def vif():
-    pass
+def sam(src, dst):
+    # 计算张量的转置
+    src_T = src.transpose(0, 1)
+    dst_T = dst.transpose(0, 1)
 
-def vif_approach_loss():
-    pass
+    # 计算点积
+    val = torch.dot(src_T.flatten(), dst_T.flatten()) / (torch.norm(src) * torch.norm(dst))
 
-def vif_metric():
-    pass
+    # 计算 SAM
+    sam = torch.acos(val)
+
+    return sam
+
+def sam_approach_loss():
+    return
+
+def sam_metric(A, B, F):
+    return sam(A,F)+sam(B,F)
 
 ###########################################################################################
 
@@ -33,9 +43,7 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'AG(ir):')
-    print(f'AG(vis):')
-    print(f'AG(fused):')
+    print(f'SAM:{sam_metric(vis, ir, fused)}')
 
 if __name__ == '__main__':
     main()

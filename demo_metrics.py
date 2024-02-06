@@ -1,5 +1,6 @@
 # 本案例用于验证指标与 VIFB 的一致性
 import csv
+from metrics.eva import eva_metric
 from utils import *
 
 from metrics import ce_metric
@@ -22,6 +23,12 @@ from metrics import te_metric
 from metrics import nmi_metric
 from metrics import q_ncie_metric
 from metrics import q_w_metric
+from metrics import q_c_metric
+from metrics import q_y_metric
+from metrics import eva_metric
+from metrics import asm_metric
+from metrics import sam_metric
+from metrics import
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -55,6 +62,12 @@ def main():
         # 'NMI':nmi_metric,      # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
         # 'Q_NCIE':q_ncie_metric,# 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
         # 'Q_W':q_w_metric,      # 通过，完全一致（MEFB）
+        # 'Q_C':q_c_metric,      # 通过，与 MEFB 几乎一致。后续再调整
+        # 'Q_Y':q_y_metric,      # 通过，完全一致（MEFB）
+        # 'EVA':eva_metric,      # 通过，大概结果的区间与论文一致，博主实现的有错误，按此版本为准
+        # 'ASM':asm_metric,      # 不可微!!!
+        # 'SAM':sam_metric,      # 非常不常用??
+        # 'VIF':
     }
     metrics_data = []
     metrics_data.append(['Metric Demo']+name_list)
