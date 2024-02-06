@@ -54,7 +54,7 @@ def main():
         # 'TE':te_metric,        # 后续修改，大部分与 MEFB 非均匀化的结果完全一致，少部分有较大区别
         # 'NMI':nmi_metric,      # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
         # 'Q_NCIE':q_ncie_metric,# 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
-        'Q_W':q_w_metric,      #
+        # 'Q_W':q_w_metric,      # 通过，完全一致（MEFB）
     }
     metrics_data = []
     metrics_data.append(['Metric Demo']+name_list)
