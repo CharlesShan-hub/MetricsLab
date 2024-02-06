@@ -9,7 +9,7 @@ __all__ = [
     'cc_metric'
 ]
 
-def cc(A, B, F):
+def cc(A, B, F, eps=1e-10):
     """
     Calculate the correlation coefficient (CC) between two input images and a fused image.
 
@@ -17,6 +17,7 @@ def cc(A, B, F):
         A (torch.Tensor): The first input image tensor.
         B (torch.Tensor): The second input image tensor.
         F (torch.Tensor): The fused image tensor.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
         torch.Tensor: The correlation coefficient value.
@@ -25,8 +26,8 @@ def cc(A, B, F):
     B_mean = torch.mean(B)
     F_mean = torch.mean(F)
 
-    rAF = torch.sum((A - A_mean) * (F - F_mean)) / torch.sqrt(torch.sum((A - A_mean) ** 2) * torch.sum((F - F_mean) ** 2))
-    rBF = torch.sum((B - B_mean) * (F - F_mean)) / torch.sqrt(torch.sum((B - B_mean) ** 2) * torch.sum((F - F_mean) ** 2))
+    rAF = torch.sum((A - A_mean) * (F - F_mean)) / torch.sqrt(eps + torch.sum((A - A_mean) ** 2) * torch.sum((F - F_mean) ** 2))
+    rBF = torch.sum((B - B_mean) * (F - F_mean)) / torch.sqrt(eps + torch.sum((B - B_mean) ** 2) * torch.sum((F - F_mean) ** 2))
 
     return torch.mean(torch.stack([rAF, rBF]))
 

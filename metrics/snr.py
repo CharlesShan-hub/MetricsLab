@@ -32,9 +32,9 @@ def snr(A, B, F, eps=1e-10):
 def snr_approach_loss(A, B, F):
     return -snr(A, B, F)
 
-# 模拟 VIFB（输入是 0-255）
 def snr_metric(A, B, F):
-    return snr(A*255, B*255, F*255)
+    # print(snr(A*255, B*255, F*255),snr(A, B, F)) # 结果一样，所以简化计算可以不乘 255
+    return snr(A, B, F)
 
 ###########################################################################################
 

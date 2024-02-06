@@ -4,9 +4,9 @@ import kornia
 ###########################################################################################
 
 __all__ = [
-    'q_ncie',
-    'q_ncie_approach_loss',
-    'q_ncie_metric'
+    'nmi',
+    'nmi_approach_loss',
+    'nmi_metric'
 ]
 
 def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
@@ -35,12 +35,13 @@ def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
     en_x = -torch.sum(marginal_x[mask] * torch.log2(marginal_x[mask]))
     mask = (marginal_y != 0)
     en_y = -torch.sum(marginal_y[mask] * torch.log2(marginal_y[mask]))
+    mi = en_x + en_y - en_xy
 
-    return (en_x + en_y - en_xy) / 8 # log2 256
+    return mi, en_xy, en_x, en_y
 
-def q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
+def nmi(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
     """
-    Calculate the Non-Complementary Information Entropy (NCIE) quality index between two input images and their fusion.
+    Calculate the Normalized Mutual Information (NMI) between two input images and their fusion.
 
     Args:
         A (torch.Tensor): The first input image tensor.
@@ -51,34 +52,18 @@ def q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
         normalize (bool, optional): Whether to normalize input images. Default is False.
 
     Returns:
-        torch.Tensor: The NCIE quality index between the two input images and their fusion.
+        torch.Tensor: The NMI value between the two input images and their fusion.
     """
-    # Calculate Normalized Cross-Correlation (NCC) between * and *
-    NCC_AB = _mi(A,B,bandwidth,eps,normalize)
-    NCC_AF = _mi(A,F,bandwidth,eps,normalize)
-    NCC_BF = _mi(B,F,bandwidth,eps,normalize)
+    mi_AF, en_AF, en_A, en_F1 = _mi(A,F,bandwidth,eps,normalize)
+    mi_BF, en_BF, en_B, en_F2 = _mi(B,F,bandwidth,eps,normalize)
+    return 2*(mi_AF/(en_A+en_F1)+mi_BF/(en_B+en_F2))
 
-    # Create the correlation matrix
-    R = torch.tensor([[1, NCC_AB, NCC_AF],
-                      [NCC_AB, 1, NCC_BF],
-                      [NCC_AF, NCC_BF, 1]])
 
-    # Calculate the eigenvalues
-    r, _ = torch.linalg.eig(R)
+def nmi_approach_loss(A, F):
+    return -nmi(A,A,F)
 
-    # Calculate the HR quality index using the eigenvalues
-    K = 3 # MEFB
-    HR = torch.sum(r * torch.log2(r / K)) / K
-    HR = -HR / 8 # torch.log2(b) , b=256
-
-    # Return the Non-Complementary Information Entropy quality index
-    return (1 - HR).real
-
-def q_ncie_approach_loss():
-    pass
-
-def q_ncie_metric(A, B, F):
-    return q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False)
+# 与 MEFB 统一
+nmi_metric = nmi
 
 ###########################################################################################
 
@@ -95,7 +80,11 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'Q_NCIE:{q_ncie(vis,ir,fused)}')
+    print(f'NMI metric:{nmi_metric(ir,vis,fused)}')
+    # print(f'TE(vis,fused):{te(vis,fused)}') # 73.67920684814453 正确
+    # # print(f'TE(vis,fused):{te(vis,fused,normalize=True)}') # 48536.9453125错了
+    # print(f'TE(fused,fused):{te(fused,fused)}')
+    # print(f'TE_metric(ir,vis,fused):{te_metric(ir,vis,fused)}')
 
 if __name__ == '__main__':
     main()

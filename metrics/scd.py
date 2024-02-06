@@ -11,7 +11,7 @@ __all__ = [
 
 import torch
 
-def scd(A, B, F):
+def scd(A, B, F, eps=1e-10):
     """
     Calculate the Symmetric Conditional Dependence (SCD) between three variables A, B, and F using PyTorch.
 
@@ -19,6 +19,7 @@ def scd(A, B, F):
     - A (torch.Tensor): Tensor representing variable A.
     - B (torch.Tensor): Tensor representing variable B.
     - F (torch.Tensor): Tensor representing variable F.
+    - eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
     - float: Symmetric Conditional Dependence (SCD) value.
@@ -38,7 +39,7 @@ def scd(A, B, F):
         """
         a = a - torch.mean(a)
         b = b - torch.mean(b)
-        r = torch.sum(a * b) / torch.sqrt(torch.sum(a * a) * torch.sum(b * b))
+        r = torch.sum(a * b) / torch.sqrt(torch.sum(a * a) * torch.sum(b * b) + eps)
         return r
 
     # Calculate the SCD as the sum of two correlation coefficients
@@ -104,11 +105,14 @@ def main():
 
     print(f'CC(ir,vis,fused) by Tang:{scd_tang(ir_array,vis_array,fused_array)}')      # 输入的是 0-255 的整数
     print(f'CC(ir,vis,fused) by self:{scd(ir_tensor,vis_tensor,fused_tensor)}')        # 输入的是 0-1 的小数
+    print(f'CC(ir,ir,ir) by Tang:{scd_tang(ir_array,ir_array,ir_array)}')              # 输入的是 0-255 的整数
     print(f'CC(ir,ir,ir) by self:{scd(ir_tensor,ir_tensor,ir_tensor)}')                # 输入的是 0-1 的小数
+    print(f'CC(vis,vis,vis) by Tang:{scd_tang(vis_array,vis_array,vis_array)}')        # 输入的是 0-255 的整数
     print(f'CC(vis,vis,vis) by self:{scd(vis_tensor,vis_tensor,vis_tensor)}')          # 输入的是 0-1 的小数
+    print(f'CC(vis,vis,ir) by Tang:{scd_tang(vis_array,vis_array,ir_array)}')          # 输入的是 0-255 的小数
     print(f'CC(vis,vis,ir) by self:{scd(vis_tensor,vis_tensor,ir_tensor)}')            # 输入的是 0-1 的小数
-    print(f'CC(vis,vis,fused) by self:{scd(vis_tensor,vis_tensor,fused_tensor)}')      # 输入的是 0-1 的小数
     print(f'CC(vis,vis,fused) by Tang:{scd_tang(vis_array,vis_array,fused_array)}')    # 输入的是 0-255 的整数
+    print(f'CC(vis,vis,fused) by self:{scd(vis_tensor,vis_tensor,fused_tensor)}')      # 输入的是 0-1 的小数
 
 if __name__ == '__main__':
     main()

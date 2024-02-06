@@ -9,13 +9,17 @@
 # 信息论
 from metrics.ce import *       # VIFB - 交叉熵
 from metrics.en import *       # VIFB - 信息熵
+from metrics.te import *       # MEFB - tsallis熵
 from metrics.mi import *       # VIFB - 互信息
+from metrics.nmi import *      # MEFB - 标准化互信息
+from metrics.q_ncie import *   # MEFB - 非线性相关性
 from metrics.snr import *      # Many - 信噪比
 from metrics.psnr import *     # VIFB - 峰值信噪比
 
 # 结构相似性
 from metrics.ssim import *     # VIFB - 结构相似度测量
 from metrics.ms_ssim import *  # Tang - 多尺度结构相似度测量
+from metrics.q_w import *      # MEFB - 利用 SSIM 的指标
 from metrics.rmse import *     # VIFB - 均方误差
 # from metrics.ergas import *    # Many
 # from metrics.sam import *      # Many
@@ -47,11 +51,9 @@ from metrics.scd import *      # Tang - 差异相关和
 # from metrics.q_s import *      #
 # from metrics.q_y import *      #
 # from metrics.q_c import *      #
-# from metrics.q_ncie import *   #
 # from metrics.mi_abf import *   #
 # from metrics.viff import *     #
 # from metrics.q_p import *      #
-# from metrics.q_w import *      #
 # from metrics.q_e import *      #
 # from metrics.uqi import *      # Many
 # from metrics.qi import *       # Many
