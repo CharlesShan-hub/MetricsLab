@@ -22,9 +22,10 @@ from metrics.ms_ssim import *  # Tang - 多尺度结构相似度测量
 from metrics.q_w import *      # MEFB - 利用 SSIM 的指标
 from metrics.q_c import *      # MEFB - Cvejic
 from metrics.q_y import *      # MEFB - Yang
-from metrics.mse import *     # VIFB - 均方误差
+from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
-# from metrics.ergas import *    # Many
+from metrics.nrmse import *    # normalized root mean square error
+# from metrics.ergas import *   # Many
 
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
@@ -37,10 +38,12 @@ from metrics.q_abf import *    # VIFB - 基于梯度的融合性能
 from metrics.eva import *      # Zhihu - 点锐度
 from metrics.asm import *      # Zhihu - 角二阶矩 - 不可微!!!
 from metrics.sam import *      # Zhihu - 光谱角测度
+from metrics.con import *      # 对比度
 
 # 视觉感知
+from metrics.q_cv import *     # VIFB -
 from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
-# from metrics.vif import *      # Tang - 视觉保真度
+from metrics.vif import *      # Tang - 视觉保真度
 
 # 新指标暂时没分类
 from metrics.cc import *       # Tang - 相关系数

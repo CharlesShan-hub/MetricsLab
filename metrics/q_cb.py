@@ -17,6 +17,19 @@ def _normalize(data):
     return newdata * 255
     # return torch.round(newdata * 255) # <- 最终确定就是这一步导致的梯度消失
 
+def _freq_meshgrid(size, d=1.0):
+    """生成频率坐标"""
+    def _line(n, d=1.0):
+        val = 1.0 / (n * d)
+        results = torch.arange(0, n).to(torch.float)
+        p2 = (n + 1) // 2
+        results[p2:] -= n
+        results *= val
+        shift = p2 if n % 2 == 0 else p2 - 1
+        return torch.roll(results, shift, dims=0)  # 将零频率移到中心
+    _, _, m, n = size
+    return torch.meshgrid(_line(m,d)*2, _line(n,d)*2)
+
 def gaussian2d(sigma,size=31):
       meshgrid = kornia.create_meshgrid(size, size, normalized_coordinates=False)
       x = meshgrid[0, :, :, 0] - (size - 1) / 2
@@ -41,14 +54,19 @@ def contrast_sensitivity_filtering_Sd(size=None,mode='frequency'):
     elif mode == 'spatial': # 最后证明
         M=N=7 # 我想转换到时域所以 size 需要很小（我加的）
         m = M/2; n = N/2  # DoG1
+    else:
+        raise ValueError("`mode` should only be 'frequency' or 'spatial'")
 
     # meshgrid
     #u,v = torch.meshgrid(torch.linspace(-1, 1, N, dtype=torch.float64), torch.linspace(-1, 1, M, dtype=torch.float64))
     #u = u*n0;v = v*m0
     #meshgrid = kornia.create_meshgrid(M, N, normalized_coordinates=False) # Python可以选择是否归一化
-    meshgrid = kornia.create_meshgrid(M, N, normalized_coordinates=True) # 与 VIFB 一致，归一化然后放缩，但精度不够，没有替代方案
-    u = (meshgrid[0, :, :, 0]).to(torch.float64) * n
-    v = (meshgrid[0, :, :, 1]).to(torch.float64) * m
+    #meshgrid = kornia.create_meshgrid(M, N, normalized_coordinates=True) # 与 VIFB 一致，归一化然后放缩，但精度不够，没有替代方案
+    # u = (meshgrid[0, :, :, 0]).to(torch.float64) * n
+    # v = (meshgrid[0, :, :, 1]).to(torch.float64) * m
+    (u, v) = _freq_meshgrid(size)
+    u = u * n
+    v = v * m
 
     # Dog in Frequency
     r = torch.sqrt(u**2 + v**2)

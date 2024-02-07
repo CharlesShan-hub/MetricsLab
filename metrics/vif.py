@@ -33,9 +33,9 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'AG(ir):')
-    print(f'AG(vis):')
-    print(f'AG(fused):')
+    print(f'VIF(ir):')
+    print(f'VIF(vis):')
+    print(f'VIF(fused):')
 
 if __name__ == '__main__':
     main()

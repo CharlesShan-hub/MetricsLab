@@ -9,7 +9,7 @@ __all__ = [
     'q_w_metric'
 ]
 
-def q_w(A, B, F, window_size=11, eps=1e-10):
+def q_w(A, B, F, window_size=11, eps=1e-10): # Peilla's metric
     def modify(A):
         X = kornia.filters.filter2d(A*255,torch.tensor([[[1,0,-1],[1,0,-1],[ 1, 0,-1]]]),border_type='constant')
         Y = kornia.filters.filter2d(A*255,torch.tensor([[[1,1, 1],[0,0, 0],[-1,-1,-1]]]),border_type='constant')
