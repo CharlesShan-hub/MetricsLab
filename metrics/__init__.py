@@ -41,7 +41,7 @@ from metrics.sam import *      # Zhihu - 光谱角测度
 from metrics.con import *      # 对比度
 
 # 视觉感知
-from metrics.q_cv import *     # VIFB -
+from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney
 from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
 from metrics.vif import *      # Tang - 视觉保真度
 
@@ -50,9 +50,7 @@ from metrics.cc import *       # Tang - 相关系数
 from metrics.scd import *      # Tang - 差异相关和
 # from metrics.n_abf import *    # Tang - 基于噪声评估的融合性能
 
-# from metrics.fmi_w import *    #
-# from metrics.fmi_dct import *  #
-# from metrics.fmi_pixel import *#
+from metrics.fmi import *      # OE - fmi_w(Discrete Meyer wavelet),fmi_g(Gradient),fmi_d(DCT),fmi_e(Edge),fmi_p(Raw pixels (no feature extraction))
 # from metrics.df import *       #
 # from metrics.q_sf import *     #
 # from metrics.q_mi import *     #

@@ -33,6 +33,11 @@ from metrics import mse_metric
 from metrics import vif_metric
 from metrics import con_metric
 from metrics import nrmse_metric
+from metrics import fmi_w_metric
+from metrics import fmi_g_metric
+from metrics import fmi_d_metric
+from metrics import fmi_e_metric
+from metrics import fmi_p_metric
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -44,38 +49,45 @@ def main():
         tensor_list.append(read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model=name,requires_grad=True))
 
     VIFB_dist = {
-        # 'CE':ce_metric,        # 通过，完全一致
-        # 'EN':en_metric,        # 通过，完全一致
-        # 'mi':mi_metric,        # 通过，结果与 VIFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
-        # 'PSNR':psnr_metric,    # 通过。该代码 VIFB 有错，以本代码为准
-        # 'SSIM':ssim_metric,    # 通过，kornia 官方实现。该代码 VIFB 有错（没除 2），以本代码为准
-        # 'RMSE':rmse_metric,    # 通过，完全一致
-        # 'AG':ag_metric,        # 通过，1e-5 级别上有误差,因为 eps=1e-10
-        # 'EI':ei_metric,        # 通过，1e-5 级别上有误差,因为 eps=1e-10
-        # 'SD':sd_metric,        # 通过，1e-5 级别上有误差,因为 eps=1e-10
-        # 'SF':sf_metric,        # 通过，该代码 VIFB 有错，以本代码为准（VIFB求平均求错了，像素个数写成了 mn 其实是 m(n-1)）
-        # 'Q_ABF':q_abf_metric,  # 通过，小数点后两位无误差。后续再调整
-        # 'Q_CB':q_cb_metric,    # 通过，小数点后一位无误差。后续再调整
-        # 'Q_CV':q_cv_metric,    # 通过, 完全一致（VIFB）
+        # 'CE':ce_metric,              # 通过，完全一致
+        # 'EN':en_metric,              # 通过，完全一致
+        # 'mi':mi_metric,              # 通过，结果与 VIFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
+        # 'PSNR':psnr_metric,          # 通过。该代码 VIFB 有错，以本代码为准
+        # 'SSIM':ssim_metric,          # 通过，kornia 官方实现。该代码 VIFB 有错（没除 2），以本代码为准
+        # 'RMSE':rmse_metric,          # 通过，完全一致
+        # 'AG':ag_metric,              # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        # 'EI':ei_metric,              # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        # 'SD':sd_metric,              # 通过，1e-5 级别上有误差,因为 eps=1e-10
+        # 'SF':sf_metric,              # 通过，该代码 VIFB 有错，以本代码为准（VIFB求平均求错了，像素个数写成了 mn 其实是 m(n-1)）
+        # 'Q_ABF':q_abf_metric,        # 通过，小数点后两位无误差。后续再调整
+        # 'Q_CB':q_cb_metric,          # 通过，小数点后一位无误差。后续再调整
+        # 'Q_CV':q_cv_metric,          # 通过, 完全一致（VIFB）
     }
 
     metric_dist = {
-        # 'CC':cc_metric,        # 通过，完全一致（Tang）
-        # 'SCD':scd_metric,      # 通过，完全一致（Tang）
-        # 'SNR':snr_metric,      # 可以运行
-        # 'TE':te_metric,        # 后续修改，大部分与 MEFB 非均匀化的结果完全一致，少部分有较大区别
-        # 'NMI':nmi_metric,      # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
-        # 'Q_NCIE':q_ncie_metric,# 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
-        # 'Q_W':q_w_metric,      # 通过，完全一致（MEFB）
-        # 'Q_C':q_c_metric,      # 通过，与 MEFB 几乎一致。后续再调整
-        # 'Q_Y':q_y_metric,      # 通过，完全一致（MEFB）
-        # 'EVA':eva_metric,      # 通过，大概结果的区间与论文一致，博主实现的有错误，按此版本为准
-        # 'ASM':asm_metric,      # 不可微!!!
-        # 'SAM':sam_metric,      # 非常不常用??
-        # 'MSE':mse_metric,      # 通过
-        # 'CON':con_metric,      # 通过
-        # 'NRMSE':nrmse_metric,  # 通过
-        # 'VIF': vif_metric,
+        # 'CC':cc_metric,              # 通过，完全一致（Tang）
+        # 'SCD':scd_metric,            # 通过，完全一致（Tang）
+        # 'SNR':snr_metric,            # 可以运行
+        # 'TE':te_metric,              # 后续修改，大部分与 MEFB 非均匀化的结果完全一致，少部分有较大区别
+        # 'NMI':nmi_metric,            # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
+        # 'Q_NCIE':q_ncie_metric,      # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
+        # 'Q_W':q_w_metric,            # 通过，完全一致（MEFB）
+        # 'Q_C':q_c_metric,            # 通过，与 MEFB 几乎一致。后续再调整
+        # 'Q_Y':q_y_metric,            # 通过，完全一致（MEFB）
+        # 'EVA':eva_metric,            # 通过，大概结果的区间与论文一致，博主实现的有错误，按此版本为准
+        # 'ASM':asm_metric,            # 不可微!!!
+        # 'SAM':sam_metric,            # 非常不常用??
+        # 'MSE':mse_metric,            # 通过
+        # 'CON':con_metric,            # 通过
+        # 'NRMSE':nrmse_metric,        # 通过
+        # 'FMI(pixel)':fmi_p_metric,   # 理论一致，只能循环，非常耗时
+        # 'FMI(edge)':fmi_e_metric,    # 理论一致，只能循环，非常耗时
+        # 'FMI(dct)':fmi_d_metric,     # 理论一致，只能循环，非常耗时
+        # 'FMI(gradient)':fmi_g_metric,# 理论一致，只能循环，非常耗时
+        # 'FMI(wavelet)':fmi_w_metric, # 理论一致，只能循环，非常耗时
+        'MG':mg_metric               #
+        # 'VIF': vif_metric,           #
+        # 'VIFF': viff_metric,         #
     }
     metrics_data = []
     metrics_data.append(['Metric Demo']+name_list)
