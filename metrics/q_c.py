@@ -9,7 +9,21 @@ __all__ = [
     'q_c_metric'
 ]
 
-def q_c(A, B, F, window_size=7, eps=1e-10):
+def q_c(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+        window_size: int = 7, eps: float = 1e-10) -> torch.Tensor:
+    """
+    Calculate the Q_C quality index for image fusion.
+
+    Args:
+        A (torch.Tensor): The first input image tensor.
+        B (torch.Tensor): The second input image tensor.
+        F (torch.Tensor): The fused image tensor.
+        window_size (int, optional): The size of the Gaussian kernel for filtering. Default is 7.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The Q_C quality index between the two input images and their fusion.
+    """
     def ssim_yang(A,B): # SSIM_Yang
         C1 = 2e-16
         C2 = 2e-16
@@ -30,10 +44,10 @@ def q_c(A, B, F, window_size=7, eps=1e-10):
     Q_C[ssimABF<0] = 0
     return torch.mean(Q_C)
 
-def q_c_approach_loss(A, F):
-    pass
+def q_c_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_c(A, A, F, window_size=7)
 
-def q_c_metric(A, B, F):
+def q_c_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_c(A, B, F, window_size=7)
 
 ###########################################################################################
@@ -52,6 +66,12 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'q_c_metric:{q_c(vis, ir, fused)}')
+    print(f'q_c_metric:{q_c(vis, vis, vis)}')
+    print(f'q_c_metric:{q_c(vis, vis, fused)}')
+    print(f'q_c_metric:{q_c(vis, vis, ir)}')
+    print(f'q_c_metric:{q_c(ir, ir, vis)}')
+    print(f'q_c_metric:{q_c(ir, ir, fused)}')
+    print(f'q_c_metric:{q_c(ir, ir, ir)}')
 
 if __name__ == '__main__':
     main()

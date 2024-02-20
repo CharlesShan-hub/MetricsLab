@@ -10,7 +10,9 @@ __all__ = [
     'te_metric'
 ]
 
-def te(image1, image2, q=1.85, bandwidth=0.1, eps=1e-10, normalize=False):
+def te(image1: torch.Tensor, image2: torch.Tensor,
+    q: float = 1.85, bandwidth: float = 0.1, eps: float = 1e-10,
+    normalize: bool = False) -> torch.Tensor:
     """
     Calculate the Tsallis entropy (TE) between two input images.
 
@@ -58,11 +60,11 @@ def te(image1, image2, q=1.85, bandwidth=0.1, eps=1e-10, normalize=False):
     return (1-result)/(1-q)
 
 # 两张图一样，平均梯度会相等
-def te_approach_loss(A, F):
-    pass #return torch.abs(te(A)-te(F))
+def te_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(te(A,A)-te(A,F))
 
 # 与 MEFB 统一
-def te_metric(A, B, F):
+def te_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 1 # MEFB里边没有除 2
     q=1.85;     # Cvejic's constant
     return w0 * te(A, F, q, normalize=False) + w1 * te(B, F, q, normalize=False)
@@ -86,6 +88,8 @@ def main():
     print(f'TE(vis,fused):{te(vis,fused)}') # 73.67920684814453 正确
     # print(f'TE(vis,fused):{te(vis,fused,normalize=True)}') # 48536.9453125错了
     print(f'TE(fused,fused):{te(fused,fused)}')
+    print(f'TE(ir,ir):{te(ir,ir)}')
+    print(f'TE(vis,vis):{te(vis,vis)}')
     print(f'TE_metric(ir,vis,fused):{te_metric(ir,vis,fused)}')
 
 if __name__ == '__main__':

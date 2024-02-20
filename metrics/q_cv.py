@@ -14,8 +14,8 @@ def _normalize(data):
     min_value = torch.min(data)
     if max_value == 0 and min_value == 0: return data
     else: newdata = (data - min_value) / (max_value - min_value)
-    # return newdata * 255
-    return torch.round(newdata * 255) # <- 这一步会导致梯度消失
+    return newdata * 255
+    #return torch.round(newdata * 255) # <- 这一步会导致梯度消失
 
 def _freq_meshgrid(size, d=1.0):
     """生成频率坐标"""
@@ -30,7 +30,23 @@ def _freq_meshgrid(size, d=1.0):
     _, _, m, n = size
     return torch.meshgrid(_line(m,d)*2, _line(n,d)*2, indexing='ij')
 
-def q_cv(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10):
+def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 16,
+          border_type: str = 'constant', normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
+    """
+    Calculate the Q_CV (Quality Assessment for image Corner and Vertices) metric for image fusion.
+
+    Args:
+        A (torch.Tensor): The first input image tensor.
+        B (torch.Tensor): The second input image tensor.
+        F (torch.Tensor): The fused image tensor.
+        window_size (int, optional): The size of the window for local region saliency calculation. Default is 16.
+        border_type (str, optional): Type of border extension. Default is 'constant'.
+        normalize (bool, optional): Whether to normalize input images to the range [0, 1]. Default is True.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The Q_CV metric value.
+    """
     # Step 0: Params and Normalize
     alpha_c=1
     alpha_s=0.685
@@ -90,10 +106,10 @@ def q_cv(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e
             MDB[i, j] = torch.mean(torch.pow(block, 2))
     return torch.sum(RA*MDA+RB*MDB) / torch.sum(RA+RB)
 
-def q_cv_approach_loss():
-    pass
+def q_cv_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cv(A, A, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
 
-def q_cv_metric(A, B, F):
+def q_cv_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_cv(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
 
 ###########################################################################################
@@ -112,6 +128,9 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'QCV(ir,vis,fused):{q_cv(vis,ir,fused)}')
+    print(f'QCV(vis,vis,vis):{q_cv(vis,vis,vis)}')
+    print(f'QCV(vis,vis,fused):{q_cv(vis,vis,fused)}')
+    print(f'QCV(vis,vis,ir):{q_cv(vis,vis,ir)}')
 
 if __name__ == '__main__':
     main()

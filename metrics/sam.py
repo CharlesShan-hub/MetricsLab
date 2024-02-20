@@ -9,7 +9,17 @@ __all__ = [
     'sam_metric'
 ]
 
-def sam(src, dst):
+def sam(src: torch.Tensor, dst: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate the Spectral Angle Mapper (SAM) between two spectral vectors.
+
+    Args:
+        src (torch.Tensor): The source spectral vector tensor.
+        dst (torch.Tensor): The destination spectral vector tensor.
+
+    Returns:
+        torch.Tensor: The SAM value between the two input spectral vectors.
+    """
     # 计算张量的转置
     src_T = src.transpose(0, 1)
     dst_T = dst.transpose(0, 1)
@@ -22,10 +32,10 @@ def sam(src, dst):
 
     return sam
 
-def sam_approach_loss():
-    return
+def sam_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(sam(A,A)-sam(A,F))
 
-def sam_metric(A, B, F):
+def sam_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return sam(A,F)+sam(B,F)
 
 ###########################################################################################
@@ -44,6 +54,9 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'SAM:{sam_metric(vis, ir, fused)}')
+    print(f'SAM:{sam_metric(vis, vis, vis)}')
+    print(f'SAM:{sam_metric(vis, vis, fused)}')
+    print(f'SAM:{sam_metric(vis, vis, ir)}')
 
 if __name__ == '__main__':
     main()

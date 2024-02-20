@@ -11,7 +11,7 @@ __all__ = [
 
 import torch
 
-def scd(A, B, F, eps=1e-10):
+def scd(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Symmetric Conditional Dependence (SCD) between three variables A, B, and F using PyTorch.
 
@@ -22,7 +22,7 @@ def scd(A, B, F, eps=1e-10):
     - eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
-    - float: Symmetric Conditional Dependence (SCD) value.
+    - torch.Tensor: Symmetric Conditional Dependence (SCD) value.
 
     This function computes the SCD between variables A, B, and F. SCD is calculated as the sum of two correlation coefficients:
     1. The correlation between (F - B) and A.
@@ -45,7 +45,7 @@ def scd(A, B, F, eps=1e-10):
     # Calculate the SCD as the sum of two correlation coefficients
     return corr2(F - B, A) + corr2(F - A, B)
 
-def scd_tang(A, B, F):
+def scd_tang(A: np.ndarray, B: np.ndarray, F: np.ndarray) -> float:
     """
     Calculate the Symmetric Conditional Dependence (SCD) between three variables A, B, and F.
 
@@ -76,7 +76,7 @@ def scd_tang(A, B, F):
     # Calculate the SCD as the sum of two correlation coefficients
     return corr2(F - B, A) + corr2(F - A, B)
 
-def scd_approach_loss(A, B, F):
+def scd_approach_loss(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return -scd(A, B, F)
 
 # 与 Tang 统一

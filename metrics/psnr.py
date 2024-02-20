@@ -8,7 +8,8 @@ __all__ = [
     'psnr_metric'
 ]
 
-def psnr(A, B, F, MAX=1, eps=1e-10): # 改造成 VIFB 提出的用于融合的 PSNR
+def psnr(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+    MAX: float = 1, eps: float = 1e-10) -> torch.Tensor: # 改造成 VIFB 提出的用于融合的 PSNR
     """
     Calculate the Peak Signal-to-Noise Ratio (PSNR) for image fusion.
     see: https://jason-chen-1992.weebly.com/home/-peak-single-to-noise-ratio
@@ -32,11 +33,12 @@ def psnr(A, B, F, MAX=1, eps=1e-10): # 改造成 VIFB 提出的用于融合的 P
     return 10 * torch.log10(MAX ** 2 / (MSE + eps))
 
 # 两张图完全一样，PSNR 是无穷大
-def psnr_approach_loss(A, B, F, MAX=1):
+def psnr_approach_loss(A: torch.Tensor, B: torch.Tensor,
+    F: torch.Tensor, MAX: float = 1) -> torch.Tensor:
     return -psnr(A, B, F, MAX=MAX)
 
 # 与 VIFB 统一
-def psnr_metric(A, B, F):
+def psnr_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     # w0 = w1 = 0.5
     # return w0 * psnr_kornia(imgF,imgA,max_val=1) + w1 * psnr_kornia(imgF,imgB,max_val=1)
     # return w0 * psnr_kornia(imgF*255,imgA*255,max_val=255) + w1 * psnr_kornia(imgF*255,imgB*255,max_val=255) # 为了与VIFB 统一

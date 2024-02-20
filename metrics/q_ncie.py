@@ -9,7 +9,9 @@ __all__ = [
     'q_ncie_metric'
 ]
 
-def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
+def _mi(image1: torch.Tensor, image2: torch.Tensor,
+    bandwidth: float = 0.1, eps: float = 1e-10,
+    normalize: bool = False) -> torch.Tensor:
     # 将图片拉平成一维向量,将一维张量转换为二维张量
     if normalize == True:
         x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
@@ -38,7 +40,9 @@ def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
 
     return (en_x + en_y - en_xy) / 8 # log2 256
 
-def q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
+def q_ncie(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+    bandwidth: float = 0.1, eps: float = 1e-10,
+    normalize: bool = False) -> torch.Tensor:
     """
     Calculate the Non-Complementary Information Entropy (NCIE) quality index between two input images and their fusion.
 
@@ -74,10 +78,10 @@ def q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
     # Return the Non-Complementary Information Entropy quality index
     return (1 - HR).real
 
-def q_ncie_approach_loss():
-    pass
+def q_ncie_approach_loss(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return -q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False)
 
-def q_ncie_metric(A, B, F):
+def q_ncie_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_ncie(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False)
 
 ###########################################################################################
@@ -96,6 +100,12 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'Q_NCIE:{q_ncie(vis,ir,fused)}')
+    print(f'Q_NCIE:{q_ncie(vis,vis,vis)}')
+    print(f'Q_NCIE:{q_ncie(vis,vis,fused)}')
+    print(f'Q_NCIE:{q_ncie(vis,vis,ir)}')
+    print(f'Q_NCIE:{q_ncie(ir,ir,ir)}')
+    print(f'Q_NCIE:{q_ncie(ir,ir,fused)}')
+    print(f'Q_NCIE:{q_ncie(ir,ir,vis)}')
 
 if __name__ == '__main__':
     main()

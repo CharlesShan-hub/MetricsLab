@@ -5,7 +5,6 @@
  *
 '''
 
-
 # 信息论
 from metrics.ce import *       # VIFB - 交叉熵
 from metrics.en import *       # VIFB - 信息熵
@@ -15,6 +14,8 @@ from metrics.nmi import *      # MEFB - 标准化互信息
 from metrics.q_ncie import *   # MEFB - 非线性相关性
 from metrics.snr import *      # Many - 信噪比
 from metrics.psnr import *     # VIFB - 峰值信噪比
+from metrics.cc import *       # Tang - 相关系数
+from metrics.scd import *      # Tang - 差异相关和
 
 # 结构相似性
 from metrics.ssim import *     # VIFB - 结构相似度测量
@@ -37,27 +38,24 @@ from metrics.sf import *       # VIFB - 空间频率
 from metrics.q_abf import *    # VIFB - 基于梯度的融合性能
 from metrics.eva import *      # Zhihu - 点锐度
 from metrics.asm import *      # Zhihu - 角二阶矩 - 不可微!!!
-from metrics.sam import *      # Zhihu - 光谱角测度
+from metrics.sam import *      # Zhihu - 光谱角测度 - 要修改
 from metrics.con import *      # 对比度
+from metrics.fmi import *      # OE - fmi_w(Discrete Meyer wavelet),fmi_g(Gradient),fmi_d(DCT),fmi_e(Edge),fmi_p(Raw pixels (no feature extraction))
+from metrics.q_p import *      # MEFB
 
 # 视觉感知
 from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney
 from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
-from metrics.vif import *      # Tang - 视觉保真度
+# from metrics.vif import *      # Tang - 视觉保真度
+# from metrics.viff import *     #
 
 # 新指标暂时没分类
-from metrics.cc import *       # Tang - 相关系数
-from metrics.scd import *      # Tang - 差异相关和
 # from metrics.n_abf import *    # Tang - 基于噪声评估的融合性能
 
-from metrics.fmi import *      # OE - fmi_w(Discrete Meyer wavelet),fmi_g(Gradient),fmi_d(DCT),fmi_e(Edge),fmi_p(Raw pixels (no feature extraction))
 # from metrics.df import *       #
 # from metrics.q_sf import *     #
 # from metrics.q_mi import *     #
 # from metrics.q_s import *      #
-# from metrics.mi_abf import *   #
-# from metrics.viff import *     #
-# from metrics.q_p import *      #
 # from metrics.q_e import *      #
 # from metrics.uqi import *      # Many
 # from metrics.qi import *       # Many

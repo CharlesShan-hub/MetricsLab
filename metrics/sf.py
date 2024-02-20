@@ -9,7 +9,7 @@ __all__ = [
     'sf_metric'
 ]
 
-def sf(tensor,eps=1e-10): # 默认输入的是 0-1 的浮点数
+def sf(tensor: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the standard frequency of a tensor.
 
@@ -28,11 +28,11 @@ def sf(tensor,eps=1e-10): # 默认输入的是 0-1 的浮点数
     return torch.sqrt(torch.mean(grad_x**2) + torch.mean(grad_y**2) + eps)
 
 # 如果两幅图相等，SF 会一致
-def sf_approach_loss(A, F):
+def sf_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return torch.abs(sf(A) - sf(F))
 
 # 与 VIFB 统一
-def sf_metric(A, B, F):
+def sf_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return sf(F) * 255.0  # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################

@@ -9,7 +9,7 @@ __all__ = [
     'cc_metric'
 ]
 
-def cc(A, B, F, eps=1e-10):
+def cc(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the correlation coefficient (CC) between two input images and a fused image.
 
@@ -31,7 +31,7 @@ def cc(A, B, F, eps=1e-10):
 
     return torch.mean(torch.stack([rAF, rBF]))
 
-def cc_tang(A, B, F):
+def cc_tang(A: np.ndarray, B: np.ndarray, F: np.ndarray) -> float:
     """
     Compute the correlation coefficient between two variables A and B with respect to a third variable F.
 
@@ -61,11 +61,9 @@ def cc_tang(A, B, F):
     rBF = np.sum((B - mean_B) * (F - mean_F)) / np.sqrt(np.sum((B - mean_B) ** 2) * np.sum((F - mean_F) ** 2))
 
     # Calculate the average correlation coefficient CC
-    CC = np.mean([rAF, rBF])
+    return float(np.mean([rAF, rBF]))
 
-    return CC
-
-def cc_approach_loss(A, F):
+def cc_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return cc(A,A,A) - cc(A,A,F)
 
 # 与 Tang 统一

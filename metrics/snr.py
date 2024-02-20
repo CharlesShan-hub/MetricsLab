@@ -8,7 +8,7 @@ __all__ = [
     'snr_metric'
 ]
 
-def snr(A, B, F, eps=1e-10):
+def snr(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Signal-to-Noise Ratio (SNR) for image fusion.
 
@@ -29,10 +29,10 @@ def snr(A, B, F, eps=1e-10):
     return 10 * torch.log10( signal / (noise + eps))
 
 # 两张图完全一样，SNR 是无穷大
-def snr_approach_loss(A, B, F):
+def snr_approach_loss(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return -snr(A, B, F)
 
-def snr_metric(A, B, F):
+def snr_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     # print(snr(A*255, B*255, F*255),snr(A, B, F)) # 结果一样，所以简化计算可以不乘 255
     return snr(A, B, F)
 

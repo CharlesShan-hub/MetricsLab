@@ -9,7 +9,21 @@ __all__ = [
     'q_y_metric'
 ]
 
-def q_y(A, B, F, window_size=7, eps=1e-10):
+def q_y(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+        window_size: int = 7, eps: float = 1e-10) -> torch.Tensor:
+    """
+    Calculate the Q_Y quality index for image fusion.
+
+    Args:
+        A (torch.Tensor): The first input image tensor.
+        B (torch.Tensor): The second input image tensor.
+        F (torch.Tensor): The fused image tensor.
+        window_size (int, optional): The size of the Gaussian kernel for filtering. Default is 7.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The Q_Y quality index between the two input images and their fusion.
+    """
     def ssim_yang(A,B): # SSIM_Yang
         C1 = 2e-16
         C2 = 2e-16
@@ -33,10 +47,10 @@ def q_y(A, B, F, window_size=7, eps=1e-10):
 
     return (torch.sum(Q1)+torch.sum(Q2)) / (Q1.shape[0]+Q2.shape[0]) # 为了和 MEFB 统一，改变了平均的方式
 
-def q_y_approach_loss():
-    pass
+def q_y_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_y(A, A, F, window_size=7, eps=1e-10)
 
-def q_y_metric(A, B, F):
+def q_y_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_y(A, B, F, window_size=7, eps=1e-10)
 
 ###########################################################################################
@@ -55,6 +69,12 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'QY:{q_y_metric(vis, ir, fused)}')
+    print(f'Q_Y:{q_y_metric(vis,vis,vis)}')
+    print(f'Q_Y:{q_y_metric(vis,vis,fused)}')
+    print(f'Q_Y:{q_y_metric(vis,vis,ir)}')
+    print(f'Q_Y:{q_y_metric(ir,ir,ir)}')
+    print(f'Q_Y:{q_y_metric(ir,ir,fused)}')
+    print(f'Q_Y:{q_y_metric(ir,ir,vis)}')
 
 if __name__ == '__main__':
     main()

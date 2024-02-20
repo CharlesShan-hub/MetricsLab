@@ -1,4 +1,5 @@
 import torch
+import kornia
 
 ###########################################################################################
 
@@ -8,7 +9,16 @@ __all__ = [
     'eva_metric'
 ]
 
-def eva(A):
+def eva(A: torch.Tensor) -> torch.Tensor:
+    """
+    Evaluate the image by calculating the sum of the absolute mean values of specific kernels.
+
+    Args:
+        A (torch.Tensor): The input image tensor.
+
+    Returns:
+        torch.Tensor: The evaluation value.
+    """
     corner = 1 / 2 ** 0.5
     border = 1.0
     center = -4*(corner+border)
@@ -22,15 +32,15 @@ def eva(A):
     k7 = torch.tensor([[[0,0,0],[border,-border,0],[0,0,0]]])
     k8 = torch.tensor([[[0,0,0],[0,-border,border],[0,0,0]]])
 
-    [r1,r2,r3,r4,r5,r6,r7,r8] = [torch.mean(torch.abs(kornia.filters.filter2d(A,kernel))) for kernel in [k1,k2,k3,k4,k5,k6,k7,k8]]
+    res = [torch.mean(torch.abs(kornia.filters.filter2d(A,kernel))) for kernel in [k1,k2,k3,k4,k5,k6,k7,k8]]
 
-    return r1+r2+r3+r4+r5+r6+r7+r8
+    return torch.sum(torch.stack(res))
 
-def eva_approach_loss():
-    pass
+def eva_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(eva(A)-eva(F))
 
-def eva_metric(A, B, F):
-    return eva(F) * 255
+def eva_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return eva(F) * 255.0
 
 ###########################################################################################
 

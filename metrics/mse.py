@@ -9,7 +9,7 @@ __all__ = [
     'mse_metric'
 ]
 
-def mse(y_true, y_pred, eps=1e-10):
+def mse(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Mean Squared Error (MSE) between true and predicted values.
 
@@ -25,7 +25,7 @@ def mse(y_true, y_pred, eps=1e-10):
 
 mse_approach_loss = mse
 
-def mse_metric(A, B, F):
+def mse_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 0.5
     return w0 * mse(A, F) + w1 * mse(B, F)
 

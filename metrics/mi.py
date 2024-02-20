@@ -10,7 +10,7 @@ __all__ = [
     'mi_metric'
 ]
 
-def mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
+def mi(image1: torch.Tensor, image2: torch.Tensor, bandwidth: float = 0.1, eps: float = 1e-10, normalize: bool = False) -> torch.Tensor:
     """
     Calculate the differentiable mutual information between two images.
 
@@ -26,11 +26,11 @@ def mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
     """
     # 将图片拉平成一维向量,将一维张量转换为二维张量
     if normalize == True:
-        x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
-        x2 = ((image2-torch.min(image2))/(torch.max(image2) - torch.min(image2))).view(1,-1) * 255
+        x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255.0
+        x2 = ((image2-torch.min(image2))/(torch.max(image2) - torch.min(image2))).view(1,-1) * 255.0
     else:
-        x1 = image1.view(1,-1) * 255
-        x2 = image2.view(1,-1) * 255
+        x1 = image1.view(1,-1) * 255.0
+        x2 = image2.view(1,-1) * 255.0
 
     # 定义直方图的 bins
     bins = torch.linspace(0, 255, 256).to(image1.device)
@@ -53,11 +53,11 @@ def mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
     return en_x + en_y - en_xy
 
 # 内容相同时互信息最大，采用 1减比值的方法把损失做到 0-1 之间
-def mi_approach_loss(A, F):
+def mi_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return torch.abs(1 - mi(A,F) / mi(A,A))
 
 # 与调整过的 VIFB 统一（传入的图片未进行normalize）
-def mi_metric(A, B, F):
+def mi_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 1 # MEFB里边没有除 2
     return w0 * mi(A, F) + w1 * mi(B, F)
 

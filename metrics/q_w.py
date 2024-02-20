@@ -9,7 +9,21 @@ __all__ = [
     'q_w_metric'
 ]
 
-def q_w(A, B, F, window_size=11, eps=1e-10): # Peilla's metric
+def q_w(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+        window_size: int = 11, eps: float = 1e-10) -> torch.Tensor:
+    """
+    Calculate the Peilla's quality index (q_w) for image fusion.
+
+    Args:
+        A (torch.Tensor): The first input image tensor.
+        B (torch.Tensor): The second input image tensor.
+        F (torch.Tensor): The fused image tensor.
+        window_size (int, optional): The size of the Gaussian kernel for filtering. Default is 11.
+        eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
+
+    Returns:
+        torch.Tensor: The q_w quality index between the two input images and their fusion.
+    """
     def modify(A):
         X = kornia.filters.filter2d(A*255,torch.tensor([[[1,0,-1],[1,0,-1],[ 1, 0,-1]]]),border_type='constant')
         Y = kornia.filters.filter2d(A*255,torch.tensor([[[1,1, 1],[0,0, 0],[-1,-1,-1]]]),border_type='constant')
@@ -50,10 +64,10 @@ def q_w(A, B, F, window_size=11, eps=1e-10): # Peilla's metric
 
     return torch.sum(sigmaMax * (ramda*ssimAF + (1-ramda)*ssimBF))
 
-def q_w_approach_loss(A, B, F):
-    pass
+def q_w_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_w(A, A, F, window_size=11, eps=1e-10)
 
-def q_w_metric(A, B, F):
+def q_w_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_w(A, B, F, window_size=11, eps=1e-10)
 
 ###########################################################################################
@@ -72,6 +86,12 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
     print(f'Q_W:{q_w(vis,ir,fused)}')
+    print(f'Q_W:{q_w(vis,vis,vis)}')
+    print(f'Q_W:{q_w(vis,vis,fused)}')
+    print(f'Q_W:{q_w(vis,vis,ir)}')
+    print(f'Q_W:{q_w(ir,ir,ir)}')
+    print(f'Q_W:{q_w(ir,ir,fused)}')
+    print(f'Q_W:{q_w(ir,ir,vis)}')
 
 if __name__ == '__main__':
     main()

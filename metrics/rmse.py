@@ -8,7 +8,7 @@ __all__ = [
     'rmse_metric'
 ]
 
-def rmse(y_true, y_pred, eps=1e-10):
+def rmse(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Root Mean Squared Error (RMSE) between true and predicted values.
 
@@ -27,7 +27,7 @@ def rmse(y_true, y_pred, eps=1e-10):
 rmse_approach_loss = rmse
 
 # 与 VIFB 统一
-def rmse_metric(A, B, F):
+def rmse_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 0.5
     return w0 * rmse(A, F) + w1 * rmse(B, F)
 

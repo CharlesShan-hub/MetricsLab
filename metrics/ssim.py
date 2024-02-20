@@ -13,11 +13,13 @@ __all__ = [
 ssim = kornia.metrics.ssim
 
 # https://kornia.readthedocs.io/en/latest/losses.html#kornia.losses.ssim_loss
-def ssim_approach_loss(img1, img2, window_size=11, max_val=1.0, eps=1e-12, reduction='mean', padding='same'):
-    return kornia.losses.ssim_loss(img1, img2, window_size, max_val, eps, reduction, padding)
+def ssim_approach_loss(A: torch.Tensor, F: torch.Tensor,
+    window_size: int = 11, max_val: float = 1.0,
+    eps: float = 1e-12, reduction: str = 'mean', padding: str = 'same') -> torch.Tensor:
+    return kornia.losses.ssim_loss(A, F, window_size, max_val, eps, reduction, padding)
 
 # 与 VIFB 统一
-def ssim_metric(A, B, F):
+def ssim_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 0.5 # VIFB 忘了除二
     return torch.mean(w0 * ssim(A, F,window_size=11) + w1 * ssim(B ,F,window_size=11)) # 论文的窗大小就是 11
 

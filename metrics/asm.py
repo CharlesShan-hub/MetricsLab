@@ -1,6 +1,7 @@
 import torch
 import kornia
 from skimage.feature import graycomatrix
+from typing import List
 
 ###########################################################################################
 
@@ -10,7 +11,18 @@ __all__ = [
     'asm_metric'
 ]
 
-def asm(tensor, distances=[1, 2], angles=[0, 90]):
+def asm(tensor: torch.Tensor, distances: List[int] = [1, 2], angles: List[int] = [0, 90]) -> torch.Tensor:
+    """
+    Calculate the Angular Second Moment (ASM) of a gray-scale image tensor.
+
+    Args:
+        tensor (torch.Tensor): The input gray-scale image tensor.
+        distances (List[int], optional): List of pixel pair distances. Default is [1, 2].
+        angles (List[int], optional): List of angles in degrees. Default is [0, 90].
+
+    Returns:
+        torch.Tensor: The ASM value.
+    """
     # 转换为灰度图像
     if tensor.shape[1] == 3:
         tensor = kornia.color.rgb_to_grayscale(tensor)
@@ -29,12 +41,12 @@ def asm(tensor, distances=[1, 2], angles=[0, 90]):
     # 计算 ASM 的平均值
     asm_mean = asm_sum / (len(distances)*len(angles))
 
-    return asm_mean
+    return torch.tensor(asm_mean)
 
-def asm_approach_loss():
-    pass
+def asm_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(asm(A)-asm(F))
 
-def asm_metric(A, B, F):
+def asm_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return asm(F)
 
 ###########################################################################################

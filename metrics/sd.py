@@ -9,7 +9,7 @@ __all__ = [
     'sd_metric'
 ]
 
-def sd(tensor): # 默认输入的是 0-1 的浮点数
+def sd(tensor: torch.Tensor) -> torch.Tensor:
     """
     Calculate the standard deviation of a tensor.
 
@@ -22,11 +22,11 @@ def sd(tensor): # 默认输入的是 0-1 的浮点数
     return torch.sqrt(torch.mean((tensor - tensor.mean())**2))
 
 # 如果两幅图相等，SD 会一致
-def sd_approach_loss(A, F):
+def sd_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return torch.abs(sd(A) - sd(F))
 
 # 与 VIFB 统一
-def sd_metric(A, B, F):
+def sd_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return sd(F) * 255.0  # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################

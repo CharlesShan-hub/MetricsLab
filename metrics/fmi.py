@@ -130,7 +130,20 @@ def _dct(I):
     return torch.transpose(dct(torch.transpose(dct(I), dim0=-1, dim1=-2)), dim0=-1, dim1=-2)
 
 
-def fmi(A, B, F, feature='pixel', window_size=3):
+def fmi(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, feature: str = 'pixel', window_size: int = 3) -> torch.Tensor:
+    """
+    Calculate the Feature Mutual Information (FMI) between two images A and B with respect to a reference image F.
+
+    Args:
+    - A (torch.Tensor): Image A.
+    - B (torch.Tensor): Image B.
+    - F (torch.Tensor): Reference image F.
+    - feature (str): Type of feature to use. Options are 'pixel', 'wavelet', 'edge', 'dct', 'gradient'. Default is 'pixel'.
+    - window_size (int): Size of the sliding window. Default is 3.
+
+    Returns:
+    - torch.Tensor: FMI value.
+    """
     if feature == 'pixel':
         [A,B,F] = [A*255,B*255,F*255]
     elif feature == 'wavelet':
@@ -327,25 +340,27 @@ def fmi(A, B, F, feature='pixel', window_size=3):
 
     return torch.mean((cal_mi(eA,eF,jeAF,sameAF)+cal_mi(eB,eF,jeBF,sameBF))/2)
 
-def fmi_approach_loss():
-    pass
+def fmi_approach_loss(A: torch.Tensor, F: torch.Tensor,
+    feature: str = 'pixel', window_size: int = 3) -> torch.Tensor:
+    return 1-fmi(A, A, F, feature, window_size)
 
-def fmi_metric(A, B, F, feature='pixel', window_size=3):
+def fmi_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+    feature: str = 'pixel', window_size: int = 3) -> torch.Tensor:
     return fmi(A, B, F, feature, window_size)
 
-def fmi_p_metric(A, B, F):
+def fmi_p_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return fmi(A, B, F, feature='pixel', window_size=3)
 
-def fmi_w_metric(A, B, F):
+def fmi_w_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return fmi(A, B, F, feature='wavelet', window_size=3)
 
-def fmi_e_metric(A, B, F):
+def fmi_e_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return fmi(A, B, F, feature='edge', window_size=3)
 
-def fmi_d_metric(A, B, F):
+def fmi_d_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return fmi(A, B, F, feature='dct', window_size=3)
 
-def fmi_g_metric(A, B, F):
+def fmi_g_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return fmi(A, B, F, feature='gradient', window_size=3)
 
 
@@ -381,11 +396,20 @@ def main():
                            [2,2,0,1],
                            [2,0,1,1],
                            [1,1,2,2]]]])*0.5
-    print(f'FMI(pixel):{fmi(ir,vis,fused,feature="pixel")}')
-    print(f'FMI(wavelet):{fmi(vis,ir,fused,feature="wavelet")}')
-    print(f'FMI(dct):{fmi(vis,ir,fused,feature="dct")}')
-    print(f'FMI(edge):{fmi(vis,ir,fused,feature="edge")}')
-    print(f'FMI(gradient):{fmi(vis,ir,fused,feature="gradient")}')
+    print(f'FMI(pixel):{fmi(vis,vis,vis,feature="pixel")}')
+    print(f'FMI(pixel):{fmi(vis,vis,fused,feature="pixel")}')
+    print(f'FMI(pixel):{fmi(vis,vis,ir,feature="pixel")}')
+    print(f'FMI(wavelet):{fmi(vis,vis,vis,feature="wavelet")}')
+    print(f'FMI(wavelet):{fmi(vis,vis,fused,feature="wavelet")}')
+    print(f'FMI(wavelet):{fmi(vis,vis,ir,feature="wavelet")}')
+    print(f'FMI(gradient):{fmi(vis,vis,vis,feature="gradient")}')
+    print(f'FMI(gradient):{fmi(vis,vis,fused,feature="gradient")}')
+    print(f'FMI(gradient):{fmi(vis,vis,ir,feature="gradient")}')
+    # print(f'FMI(pixel):{fmi(ir,vis,fused,feature="pixel")}')
+    # print(f'FMI(wavelet):{fmi(vis,ir,fused,feature="wavelet")}')
+    # print(f'FMI(dct):{fmi(vis,ir,fused,feature="dct")}')
+    # print(f'FMI(edge):{fmi(vis,ir,fused,feature="edge")}')
+    # print(f'FMI(gradient):{fmi(vis,ir,fused,feature="gradient")}')
     # fmi(toy1,toy1,toy2,feature="pixel")
     # print(toy3)
     # print(toy4)

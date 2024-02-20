@@ -85,7 +85,7 @@ def main():
         # 'FMI(dct)':fmi_d_metric,     # 理论一致，只能循环，非常耗时
         # 'FMI(gradient)':fmi_g_metric,# 理论一致，只能循环，非常耗时
         # 'FMI(wavelet)':fmi_w_metric, # 理论一致，只能循环，非常耗时
-        'MG':mg_metric               #
+        # 'MG':mg_metric               #
         # 'VIF': vif_metric,           #
         # 'VIFF': viff_metric,         #
     }

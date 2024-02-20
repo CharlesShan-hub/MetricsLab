@@ -9,7 +9,7 @@ __all__ = [
     'ag_metric'
 ]
 
-def ag(tensor, eps=1e-10): # 默认输入的是 0-1 的浮点数
+def ag(tensor: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the edge-aware gradient (AG) of a tensor.
 
@@ -21,26 +21,26 @@ def ag(tensor, eps=1e-10): # 默认输入的是 0-1 的浮点数
         torch.Tensor: The edge-aware gradient of the input tensor.
     """
     # 使用Sobel算子计算水平和垂直梯度
-    _grad_x = kornia.filters.filter2d(tensor,torch.tensor([[-1,  1]], dtype=torch.float64).unsqueeze(0))
-    _grad_y = kornia.filters.filter2d(tensor,torch.tensor([[-1],[1]], dtype=torch.float64).unsqueeze(0))
+    _gx = kornia.filters.filter2d(tensor,torch.tensor([[[-1,  1]]]))
+    _gy = kornia.filters.filter2d(tensor,torch.tensor([[[-1],[1]]]))
 
     # 对梯度进行平均以避免过度敏感性(与 Matlab 统一)
-    grad_x = (torch.cat((_grad_x[:,:,:,0:1],_grad_x[:,:,:,:-1]),dim=-1)+torch.cat((_grad_x[:,:,:,:-1],_grad_x[:,:,:,-2:-1]),dim=-1))/2
-    grad_y = (torch.cat((_grad_y[:,:,0:1,:],_grad_y[:,:,:-1,:]),dim=-2)+torch.cat((_grad_y[:,:,:-1,:],_grad_y[:,:,-2:-1,:]),dim=-2))/2
+    gx = (torch.cat((_gx[...,0:1],_gx[...,:-1]),dim=-1)+torch.cat((_gx[...,:-1],_gx[...,-2:-1]),dim=-1))/2
+    gy = (torch.cat((_gy[:,:,0:1,:],_gy[:,:,:-1,:]),dim=-2)+torch.cat((_gy[:,:,:-1,:],_gy[:,:,-2:-1,:]),dim=-2))/2
 
     # 计算梯度的平均幅度
-    s = torch.sqrt((grad_x ** 2 + grad_y ** 2 + eps)/2)
+    s = torch.sqrt((gx ** 2 + gy ** 2 + eps)/2)
 
     # 返回 AG 值
     return torch.sum(s) / ((tensor.shape[2] - 1) * (tensor.shape[3] - 1))
 
 # 两张图一样，平均梯度会相等
-def ag_approach_loss(A, F):
-    return torch.abs(ag(A)-ag(F))
+def ag_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(ag(A) - ag(F))
 
 # 与 VIFB 统一
-def ag_metric(A, B, F):
-    return ag(F) * 255.0 # 与 VIFB 统一，需要乘 255
+def ag_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return ag(F) * 255.0  # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################
 

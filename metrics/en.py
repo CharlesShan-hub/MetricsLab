@@ -9,7 +9,7 @@ __all__ = [
     'en_metric'
 ]
 
-def en(grey_tensor, bandwidth=0.1, eps=1e-10, is_pdf=False):
+def en(grey_tensor: torch.Tensor, bandwidth: float = 0.1, eps: float = 1e-10, is_pdf: bool = False) -> torch.Tensor:
     """
     Calculate the entropy of a grayscale image.
 
@@ -42,11 +42,11 @@ def en(grey_tensor, bandwidth=0.1, eps=1e-10, is_pdf=False):
     return image_entropy
 
 # 两张图一样，含有的信息会相等
-def en_approach_loss(A,F):
+def en_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return torch.abs(en(A) - en(F))
 
 # 与 VIFB 统一
-def en_metric(A, B, F):
+def en_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return en(F)
 
 ###########################################################################################

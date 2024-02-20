@@ -9,7 +9,7 @@ __all__ = [
     'q_abf_metric'
 ]
 
-def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-10):
+def q_abf(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor, border_type: str = 'constant', eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Q_ABF (Quality Assessment for image Blurred and Fused) metric.
 
@@ -81,13 +81,13 @@ def q_abf(imgA, imgB, imgF, border_type='constant', eps=1e-10):
     return qabf_value
 
 # 采用相同图片的 q_abf 减去不同图片的 q_abf
-def q_abf_approach_loss(A, F):
+def q_abf_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     # return q_abf(A, A, A)-q_abf(A, A, F)
     # return 1-q_abf(A, A, F)
     return 0.9748 - q_abf(A, A, F)
 
 # 与 VIFB 统一
-def q_abf_metric(A, B, F):
+def q_abf_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_abf(A, B, F)
 
 ###########################################################################################

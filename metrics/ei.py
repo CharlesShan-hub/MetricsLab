@@ -9,7 +9,7 @@ __all__ = [
     'ei_metric'
 ]
 
-def ei(tensor,border_type='replicate',eps=1e-10): # 默认输入的是 0-1 的浮点数
+def ei(tensor: torch.Tensor, border_type: str = 'replicate', eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the edge intensity (EI) of a tensor using Sobel operators.
 
@@ -22,8 +22,8 @@ def ei(tensor,border_type='replicate',eps=1e-10): # 默认输入的是 0-1 的�
         torch.Tensor: The edge intensity of the input tensor.
     """
     # 使用Sobel算子计算水平和垂直梯度
-    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[ 1,  2,  1],[ 0,  0,  0],[-1, -2, -1]], dtype=torch.float64).unsqueeze(0),border_type=border_type)
-    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[ 1,  0, -1],[ 2,  0, -2],[ 1,  0, -1]], dtype=torch.float64).unsqueeze(0),border_type=border_type)
+    grad_x = kornia.filters.filter2d(tensor,torch.tensor([[[ 1,  2,  1],[ 0,  0,  0],[-1, -2, -1]]]),border_type=border_type)
+    grad_y = kornia.filters.filter2d(tensor,torch.tensor([[[ 1,  0, -1],[ 2,  0, -2],[ 1,  0, -1]]]),border_type=border_type)
 
     # 计算梯度的幅度
     s = torch.sqrt(grad_x ** 2 + grad_y ** 2 + eps)
@@ -32,12 +32,12 @@ def ei(tensor,border_type='replicate',eps=1e-10): # 默认输入的是 0-1 的�
     return torch.mean(s)
 
 # 如果两幅图相等，EI 会一致
-def ei_approach_loss(A, F):
+def ei_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return torch.abs(ei(A) - ei(F))
 
 # 与 VIFB 统一
-def ei_metric(A, B, F):
-    return ei(F) * 255 # 与 VIFB 统一，需要乘 255
+def ei_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return ei(F) * 255  # 与 VIFB 统一，需要乘 255
 
 ###########################################################################################
 

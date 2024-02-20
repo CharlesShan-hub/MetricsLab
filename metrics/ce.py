@@ -9,7 +9,7 @@ __all__ = [
     'ce_metric'
 ]
 
-def ce(target, predict, bandwidth=0.1, eps=1e-10):
+def ce(target: torch.Tensor, predict: torch.Tensor, bandwidth: float = 0.1, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the cross-entropy between the target and predicted histograms.
 
@@ -40,11 +40,11 @@ def ce(target, predict, bandwidth=0.1, eps=1e-10):
     return torch.sum(h1[mask] * torch.log2(h1[mask]/(h2[mask])))
 
 # 如果两幅图片一样 ce 为 0
-def ce_approach_loss(A,F):
+def ce_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return ce(A, F)
 
 # 与 VIFB 统一
-def ce_metric(A, B, F):
+def ce_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 0.5
     return w0 * ce(A,F) + w1 * ce(B,F)
 

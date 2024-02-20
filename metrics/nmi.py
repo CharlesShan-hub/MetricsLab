@@ -1,3 +1,4 @@
+from typing import Tuple
 import torch
 import kornia
 
@@ -9,7 +10,9 @@ __all__ = [
     'nmi_metric'
 ]
 
-def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
+def _mi(image1: torch.Tensor, image2: torch.Tensor,
+    bandwidth: float = 0.1, eps: float = 1e-10,
+    normalize: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     # 将图片拉平成一维向量,将一维张量转换为二维张量
     if normalize == True:
         x1 = ((image1-torch.min(image1))/(torch.max(image1) - torch.min(image1))).view(1,-1) * 255
@@ -39,7 +42,8 @@ def _mi(image1, image2, bandwidth=0.1, eps=1e-10, normalize=False):
 
     return mi, en_xy, en_x, en_y
 
-def nmi(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
+def nmi(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
+    bandwidth: float = 0.1, eps: float = 1e-10, normalize: bool = False) -> torch.Tensor:
     """
     Calculate the Normalized Mutual Information (NMI) between two input images and their fusion.
 
@@ -59,7 +63,7 @@ def nmi(A, B, F, bandwidth=0.1, eps=1e-10, normalize=False):
     return 2*(mi_AF/(en_A+en_F1)+mi_BF/(en_B+en_F2))
 
 
-def nmi_approach_loss(A, F):
+def nmi_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return -nmi(A,A,F)
 
 # 与 MEFB 统一

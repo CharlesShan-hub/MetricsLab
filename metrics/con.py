@@ -9,8 +9,17 @@ __all__ = [
     'con_metric'
 ]
 
-def con(A):
-    # https://blog.csdn.net/zsc201825/article/details/89645190
+def con(A: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate the Contrast (CON) metric of an image.
+    https://blog.csdn.net/zsc201825/article/details/89645190
+
+    Args:
+        A (torch.Tensor): The input image tensor.
+
+    Returns:
+        torch.Tensor: The calculated CON value.
+    """
     # padding
     A = torch.nn.functional.pad(A*255, (1, 1, 1, 1), mode='replicate')
     # con
@@ -28,10 +37,10 @@ def con(A):
     N-=2
     return (res1+res2+res3+res4)/(4*M*N - 2*M - 2*N)
 
-def con_approach_loss():
-    pass
+def con_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return torch.abs(con(A)-con(F))
 
-def con_metric(A,B,F):
+def con_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return con(F)
 
 ###########################################################################################
