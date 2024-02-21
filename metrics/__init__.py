@@ -25,8 +25,8 @@ from metrics.q_c import *      # MEFB - Cvejic
 from metrics.q_y import *      # MEFB - Yang
 from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
-from metrics.nrmse import *    # normalized root mean square error
-# from metrics.ergas import *   # Many
+from metrics.nrmse import *    # Normalized Root Mean Square Error
+from metrics.ergas import *    # Normalized Global Error
 
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
@@ -42,6 +42,7 @@ from metrics.sam import *      # Zhihu - 光谱角测度 - 要修改
 from metrics.con import *      # 对比度
 from metrics.fmi import *      # OE - fmi_w(Discrete Meyer wavelet),fmi_g(Gradient),fmi_d(DCT),fmi_e(Edge),fmi_p(Raw pixels (no feature extraction))
 from metrics.q_p import *      # MEFB
+from metrics.n_abf import *    # Tang - 基于噪声评估的融合性能
 
 # 视觉感知
 from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney
@@ -50,8 +51,6 @@ from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
 # from metrics.viff import *     #
 
 # 新指标暂时没分类
-# from metrics.n_abf import *    # Tang - 基于噪声评估的融合性能
-
 # from metrics.df import *       #
 # from metrics.q_sf import *     #
 # from metrics.q_mi import *     #

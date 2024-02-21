@@ -38,6 +38,9 @@ from metrics import fmi_g_metric
 from metrics import fmi_d_metric
 from metrics import fmi_e_metric
 from metrics import fmi_p_metric
+from metrics import ergas_metric
+from metrics import q_p_metric
+from metrics import n_abf_metric
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -80,14 +83,17 @@ def main():
         # 'MSE':mse_metric,            # 通过
         # 'CON':con_metric,            # 通过
         # 'NRMSE':nrmse_metric,        # 通过
-        # 'FMI(pixel)':fmi_p_metric,   # 理论一致，只能循环，非常耗时
-        # 'FMI(edge)':fmi_e_metric,    # 理论一致，只能循环，非常耗时
-        # 'FMI(dct)':fmi_d_metric,     # 理论一致，只能循环，非常耗时
-        # 'FMI(gradient)':fmi_g_metric,# 理论一致，只能循环，非常耗时
-        # 'FMI(wavelet)':fmi_w_metric, # 理论一致，只能循环，非常耗时
+        # 'FMI(pixel)':fmi_p_metric,   # 通过，已经改成了卷积形式
+        # 'FMI(edge)':fmi_e_metric,    # 通过，已经改成了卷积形式
+        # 'FMI(dct)':fmi_d_metric,     # 通过，已经改成了卷积形式
+        # 'FMI(gradient)':fmi_g_metric,# 通过，已经改成了卷积形式
+        # 'FMI(wavelet)':fmi_w_metric, # 通过，已经改成了卷积形式
+        # N_ABF: 'n_abf_metrics',      # 通过，完全一致（Many）
         # 'MG':mg_metric               #
         # 'VIF': vif_metric,           #
         # 'VIFF': viff_metric,         #
+        # 'ERGAS': ergas_metric,       # 通过
+        # 'Q_P': q_p_metric,           #
     }
     metrics_data = []
     metrics_data.append(['Metric Demo']+name_list)
