@@ -43,6 +43,7 @@ from metrics.con import *      # 对比度
 from metrics.fmi import *      # OE - fmi_w(Discrete Meyer wavelet),fmi_g(Gradient),fmi_d(DCT),fmi_e(Edge),fmi_p(Raw pixels (no feature extraction))
 from metrics.q_p import *      # MEFB
 from metrics.n_abf import *    # Tang - 基于噪声评估的融合性能
+from metrics.pww import *      # Many - Pei-Wei Wang's algorithms
 
 # 视觉感知
 from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney

@@ -41,6 +41,7 @@ from metrics import fmi_p_metric
 from metrics import ergas_metric
 from metrics import q_p_metric
 from metrics import n_abf_metric
+from metrics import pww_metric
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -89,7 +90,7 @@ def main():
         # 'FMI(gradient)':fmi_g_metric,# 通过，已经改成了卷积形式
         # 'FMI(wavelet)':fmi_w_metric, # 通过，已经改成了卷积形式
         # N_ABF: 'n_abf_metrics',      # 通过，完全一致（Many）
-        # 'MG':mg_metric               #
+        # PWW: 'pww_metrics',          # 通过，完全一致（Many）
         # 'VIF': vif_metric,           #
         # 'VIFF': viff_metric,         #
         # 'ERGAS': ergas_metric,       # 通过
