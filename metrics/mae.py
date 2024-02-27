@@ -4,14 +4,14 @@ import torch.nn.functional as F
 ###########################################################################################
 
 __all__ = [
-    'mse',
-    'mse_approach_loss',
-    'mse_metric'
+    'mae',
+    'mae_approach_loss',
+    'mae_metric'
 ]
 
-def mse(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
+def mae(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
     """
-    Calculate the Mean Squared Error (MSE) between true and predicted values.
+    Calculate the Mean Absolute Error (MAE) between true and predicted values.
 
     Args:
         y_true (torch.Tensor): The true values tensor.
@@ -19,15 +19,15 @@ def mse(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torch
         eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
-        torch.Tensor: The MSE between true and predicted values.
+        torch.Tensor: The MAE between true and predicted values.
     """
-    return torch.mean((y_true - y_pred)**2)
+    return torch.mean(torch.abs(y_true - y_pred))
 
-mse_approach_loss = mse
+mae_approach_loss = mae
 
-def mse_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+def mae_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     w0 = w1 = 0.5
-    return w0 * mse(A, F) + w1 * mse(B, F)
+    return w0 * mae(A, F) + w1 * mae(B, F)
 
 ###########################################################################################
 
@@ -44,9 +44,9 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'MSE(ir,ir):{mse(ir,ir)}')
-    print(f'MSE(ir,vis):{mse(ir,vis)}')
-    print(f'MSE(ir,fused):{mse(ir,fused)}')
+    print(f'MAE(ir,ir):{mae(ir,ir)}')
+    print(f'MAE(ir,vis):{mae(ir,vis)}')
+    print(f'MAE(ir,fused):{mae(ir,fused)}')
 
 if __name__ == '__main__':
     main()

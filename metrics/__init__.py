@@ -23,6 +23,8 @@ from metrics.ms_ssim import *  # Tang - 多尺度结构相似度测量
 from metrics.q_w import *      # MEFB - 利用 SSIM 的指标
 from metrics.q_c import *      # MEFB - Cvejic
 from metrics.q_y import *      # MEFB - Yang
+from mstrics.eme import *
+from metrics.mae import *
 from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
 from metrics.nrmse import *    # Normalized Root Mean Square Error
@@ -31,7 +33,7 @@ from metrics.ergas import *    # Normalized Global Error
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
 from metrics.ei import *       # VIFB - 边缘强度
-# from metrics.mb import *       # Many
+from metrics.mb import *       # Many
 # from metrics.pfe import *      # Many
 from metrics.sd import *       # VIFB - 标准差
 from metrics.sf import *       # VIFB - 空间频率
@@ -48,7 +50,7 @@ from metrics.pww import *      # Many - Pei-Wei Wang's algorithms
 # 视觉感知
 from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney
 from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
-# from metrics.vif import *      # Tang - 视觉保真度
+from metrics.vif import *      # Tang - 视觉保真度
 # from metrics.viff import *     #
 
 # 新指标暂时没分类

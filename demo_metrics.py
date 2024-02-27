@@ -91,7 +91,7 @@ def main():
         # 'FMI(wavelet)':fmi_w_metric, # 通过，已经改成了卷积形式
         # N_ABF: 'n_abf_metrics',      # 通过，完全一致（Many）
         # PWW: 'pww_metrics',          # 通过，完全一致（Many）
-        # 'VIF': vif_metric,           #
+        # 'VIF': vif_metric,           # 通过，完全一致（Many）
         # 'VIFF': viff_metric,         #
         # 'ERGAS': ergas_metric,       # 通过
         # 'Q_P': q_p_metric,           #
