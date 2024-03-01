@@ -9,7 +9,7 @@ from utils import *
 
 from metrics import rmse_approach_loss
 from metrics import ssim_approach_loss
-# from metrics import ce_approach_loss
+from metrics import ce_approach_loss
 # from metrics import en_approach_loss
 # from metrics import mi_loss
 # from metrics import psnr_loss
@@ -32,7 +32,7 @@ fuse_tensor2 = read_grey_tensor(dataset='TNO',category='fuse',name='9.bmp',model
 # Params
 num_epochs = 300
 learning_rate = 0.003
-folder_name = 'APPROACH_EI'
+folder_name = 'APPROACH_CE'
 seed = 42
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -80,8 +80,10 @@ for epoch in range(num_epochs):
     #sloss_ir = psnr_loss(fuse_tensor2,ir_tensor,max_val=1)
     #loss_vis = ag_loss(fuse_tensor1)
     #loss_ir = ag_loss(fuse_tensor2)
-    loss_vis = ei_approach_loss(fuse_tensor1,vis_tensor)
-    loss_ir = ei_approach_loss(fuse_tensor2,ir_tensor)
+    # loss_vis = ei_approach_loss(fuse_tensor1,vis_tensor)
+    # loss_ir = ei_approach_loss(fuse_tensor2,ir_tensor)
+    loss_vis = ce_approach_loss(fuse_tensor1,vis_tensor)
+    loss_ir = ce_approach_loss(fuse_tensor2,ir_tensor)
     #loss_vis = sd_loss(fuse_tensor1)
     #loss_ir = sd_loss(fuse_tensor2)
     #loss_vis = sf_loss(fuse_tensor1)

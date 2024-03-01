@@ -20,10 +20,13 @@ from metrics.scd import *      # Tang - 差异相关和
 # 结构相似性
 from metrics.ssim import *     # VIFB - 结构相似度测量
 from metrics.ms_ssim import *  # Tang - 多尺度结构相似度测量
-from metrics.q_w import *      # MEFB - 利用 SSIM 的指标
+from metrics.q_s import *      # MEFB - 利用 SSIM 的指标 Piella's Fusion Quality Index
+from metrics.q_w import *      # MEFB - 利用 SSIM 的指标 Weighted Fusion Quality Index
+from metrics.q_e import *      # MEFB - 利用 SSIM 的指标 Piella's Edge-dependent Fusion Quality Index
 from metrics.q_c import *      # MEFB - Cvejic
 from metrics.q_y import *      # MEFB - Yang
-from mstrics.eme import *
+from metrics.mb import *       # Mean bias
+from metrics.eme import *
 from metrics.mae import *
 from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
@@ -33,7 +36,7 @@ from metrics.ergas import *    # Normalized Global Error
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
 from metrics.ei import *       # VIFB - 边缘强度
-from metrics.mb import *       # Many
+# from metrics.mb import *       # Many
 # from metrics.pfe import *      # Many
 from metrics.sd import *       # VIFB - 标准差
 from metrics.sf import *       # VIFB - 空间频率
@@ -49,9 +52,9 @@ from metrics.pww import *      # Many - Pei-Wei Wang's algorithms
 
 # 视觉感知
 from metrics.q_cv import *     # VIFB - H. Chen and P. K. Varshney
-from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估
-from metrics.vif import *      # Tang - 视觉保真度
-# from metrics.viff import *     #
+from metrics.q_cb import *     # VIFB - 图像模糊与融合的质量评估 包含 cbb,cbm,cmd
+from metrics.vif import *      # 视觉保真度 - 不可微!! 优化用 VIFF 就行
+from metrics.viff import *     # Tang - 视觉保真度
 
 # 新指标暂时没分类
 # from metrics.df import *       #

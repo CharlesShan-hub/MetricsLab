@@ -17,6 +17,11 @@ from metrics import q_abf_metric
 from metrics import q_cb_metric
 from metrics import q_cv_metric
 
+from metrics import q_cbb_metric
+from metrics import q_cbm_metric
+from metrics import q_cvm_metric
+from metrics import q_cvd_metric
+
 from metrics import cc_metric
 from metrics import scd_metric
 from metrics import snr_metric
@@ -24,6 +29,8 @@ from metrics import te_metric
 from metrics import nmi_metric
 from metrics import q_ncie_metric
 from metrics import q_w_metric
+from metrics import q_s_metric
+from metrics import q_e_metric
 from metrics import q_c_metric
 from metrics import q_y_metric
 from metrics import eva_metric
@@ -31,6 +38,7 @@ from metrics import asm_metric
 from metrics import sam_metric
 from metrics import mse_metric
 from metrics import vif_metric
+from metrics import viff_metric
 from metrics import con_metric
 from metrics import nrmse_metric
 from metrics import fmi_w_metric
@@ -42,6 +50,7 @@ from metrics import ergas_metric
 from metrics import q_p_metric
 from metrics import n_abf_metric
 from metrics import pww_metric
+from metrics import mb_metric
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -72,10 +81,12 @@ def main():
         # 'CC':cc_metric,              # 通过，完全一致（Tang）
         # 'SCD':scd_metric,            # 通过，完全一致（Tang）
         # 'SNR':snr_metric,            # 可以运行
-        # 'TE':te_metric,              # 后续修改，大部分与 MEFB 非均匀化的结果完全一致，少部分有较大区别
+        # 'TE':te_metric,              # 通过，完全一致（MEFB）
         # 'NMI':nmi_metric,            # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
         # 'Q_NCIE':q_ncie_metric,      # 通过，结果与 MEFB 未进行归一化计算的结果完全一致，归一化后核估计不能正常拟合
         # 'Q_W':q_w_metric,            # 通过，完全一致（MEFB）
+        # 'Q_S':q_s_metric,            # 通过，完全一致（MEFB）
+        # 'Q_E':q_e_metric,            # 通过，完全一致（MEFB）
         # 'Q_C':q_c_metric,            # 通过，与 MEFB 几乎一致。后续再调整
         # 'Q_Y':q_y_metric,            # 通过，完全一致（MEFB）
         # 'EVA':eva_metric,            # 通过，大概结果的区间与论文一致，博主实现的有错误，按此版本为准
@@ -89,10 +100,11 @@ def main():
         # 'FMI(dct)':fmi_d_metric,     # 通过，已经改成了卷积形式
         # 'FMI(gradient)':fmi_g_metric,# 通过，已经改成了卷积形式
         # 'FMI(wavelet)':fmi_w_metric, # 通过，已经改成了卷积形式
-        # N_ABF: 'n_abf_metrics',      # 通过，完全一致（Many）
-        # PWW: 'pww_metrics',          # 通过，完全一致（Many）
-        # 'VIF': vif_metric,           # 通过，完全一致（Many）
-        # 'VIFF': viff_metric,         #
+        # 'N_ABF': n_abf_metrics,      # 通过，完全一致（Many）
+        # 'PWW': pww_metrics,          # 通过，完全一致（Many）
+        # 'MB': mb_metric,             # 很简单
+        # 'VIF': vif_metric,           # 从网上找的代码, 不可微
+        # 'VIFF': viff_metric,         # 通过，完全一致（Many）
         # 'ERGAS': ergas_metric,       # 通过
         # 'Q_P': q_p_metric,           #
     }

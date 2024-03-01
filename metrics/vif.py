@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import kornia
 
 ###########################################################################################
@@ -9,115 +10,256 @@ __all__ = [
     'vif_metric'
 ]
 
-def vif(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
-    """Calculate the Visual Information Fidelity (VIF) metric.
 
-    Args:
-        A (torch.Tensor): The source image tensor.
-        B (torch.Tensor): The fused image tensor.
-        F (torch.Tensor): The reference image tensor.
-        eps (float, optional): Small value to avoid division by zero. Defaults to 1e-10.
+def im2col(img, k, stride=1):
+    # Parameters
+    m, n = img.shape
+    s0, s1 = img.strides
+    nrows = m - k + 1
+    ncols = n - k + 1
+    shape = (k, k, nrows, ncols)
+    arr_stride = (s0, s1, s0, s1)
 
-    Returns:
-        torch.Tensor: The VIF metric value.
-    """
-    def gaussian_kernel(kernel_size, sigma):
-        # Create a grid of points centered at the kernel origin
-        x = torch.arange(-kernel_size // 2 + 1, kernel_size // 2 + 1, dtype=torch.float32)
-        y = torch.arange(-kernel_size // 2 + 1, kernel_size // 2 + 1, dtype=torch.float32)
-        grid = torch.meshgrid(x, y, indexing='ij')
-        distance = torch.sqrt(grid[0]**2 + grid[1]**2)
-
-        # Calculate the 2D Gaussian kernel
-        kernel = torch.exp(-0.5 * (distance / sigma)**2)
-        kernel = kernel / kernel.sum()  # Normalize the kernel to ensure sum is 1
-        return kernel.unsqueeze(0)
-
-    def ComVidVindG(ref, dist, sq):
-        num_scales = 4
-        sigma_nsq = sq
-        tg1 = []
-        tg2 = []
-        tg3 = []
-        for scale in range(num_scales):
-            N = 2**(4-scale)+1
-            win = gaussian_kernel(N, N/5.0)
-
-            if scale!=0:
-                ref = kornia.filters.filter2d(ref, win, padding="valid")[:,:,::2,::2]
-                dist = kornia.filters.filter2d(dist, win, padding="valid")[:,:,::2,::2]
-
-            mu1 = kornia.filters.filter2d(ref, win, padding="valid")
-            mu2 = kornia.filters.filter2d(dist, win, padding="valid")
-            mu1_sq = mu1**2
-            mu2_sq = mu2**2
-            mu1_mu2 = mu1 * mu2
-            sigma1_sq = kornia.filters.filter2d(ref**2, win, padding="valid") - mu1_sq
-            sigma2_sq = kornia.filters.filter2d(dist**2, win, padding="valid") - mu2_sq
-            sigma12 = kornia.filters.filter2d(ref * dist, win, padding="valid") - mu1_mu2
-
-            sigma1_sq[sigma1_sq < 0] = 0
-            sigma2_sq[sigma2_sq < 0] = 0
-
-            g = sigma12 / (sigma1_sq + 1e-10)
-            sv_sq = sigma2_sq - g * sigma12
-
-            g[sigma1_sq < 1e-10] = 0
-            sv_sq[sigma1_sq < 1e-10] = sigma2_sq[sigma1_sq < 1e-10]
-            sigma1_sq[sigma1_sq < 1e-10] = 0
-
-            g[sigma2_sq < 1e-10] = 0
-            sv_sq[sigma2_sq < 1e-10] = 0
-
-            sv_sq[g < 0] = sigma2_sq[g < 0]
-            g[g < 0] = 0
-            sv_sq[sv_sq <= 1e-10] = 1e-10
-
-            tg1.append(torch.log10(1 + g**2 * sigma1_sq / (sv_sq + sigma_nsq)))
-            tg2.append(torch.log10(1 + sigma1_sq / sigma_nsq))
-            tg3.append(g)
-
-        return tg1, tg2, tg3
-
-    sq=0.005*255*255 # visual noise
-    p = torch.tensor([item/2.15 for item in [1,0,0.15,1]])
-
-    (T1N, T1D, T1G) = ComVidVindG(A,F,sq)
-    (T2N, T2D, T2G) = ComVidVindG(B,F,sq)
-
-    vid = []
-    vind = []
-    for i in range(4):
-        M_Z1 = T1N[i]
-        M_Z2 = T2N[i]
-        M_M1 = T1D[i]
-        M_M2 = T2D[i]
-        M_G1 = T1G[i]
-        M_G2 = T2G[i]
-        L = M_G1 < M_G2
-        M_G = M_G2.clone()
-        M_G[L] = M_G1[L]
-        M_Z12 = M_Z2.clone()
-        M_Z12[L] = M_Z1[L]
-        M_M12 = M_M2.clone()
-        M_M12[L] = M_M1[L]
-
-        VID = torch.sum(torch.sum(M_Z12 + eps))
-        VIND = torch.sum(torch.sum(M_M12 + eps))
-        vid.append(VID)
-        vind.append(VIND)
-
-    F = torch.tensor([vid[i] / vind[i] for i in range(4)])
-    output = torch.sum(F * p)
-
-    return output
+    ret = np.lib.stride_tricks.as_strided(img, shape=shape, strides=arr_stride)
+    return ret[:, :, ::stride, ::stride].reshape(k*k, -1)
 
 
-def vif_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    return 1-vif(A,A,F)
+def integral_image(x):
+    M, N = x.shape
+    int_x = np.zeros((M+1, N+1))
+    int_x[1:, 1:] = np.cumsum(np.cumsum(x, 0), 1)
+    return int_x
 
-def vif_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    return vif(A*255.0, B*255.0, F*255.0)
+
+def moments(x, y, k, stride):
+    kh = kw = k
+
+    k_norm = k**2
+
+    x_pad = np.pad(x, int((kh - stride)/2), mode='reflect')
+    y_pad = np.pad(y, int((kw - stride)/2), mode='reflect')
+
+    int_1_x = integral_image(x_pad)
+    int_1_y = integral_image(y_pad)
+
+    int_2_x = integral_image(x_pad*x_pad)
+    int_2_y = integral_image(y_pad*y_pad)
+
+    int_xy = integral_image(x_pad*y_pad)
+
+    mu_x = (int_1_x[:-kh:stride, :-kw:stride] - int_1_x[:-kh:stride, kw::stride] - int_1_x[kh::stride, :-kw:stride] + int_1_x[kh::stride, kw::stride])/k_norm
+    mu_y = (int_1_y[:-kh:stride, :-kw:stride] - int_1_y[:-kh:stride, kw::stride] - int_1_y[kh::stride, :-kw:stride] + int_1_y[kh::stride, kw::stride])/k_norm
+
+    var_x = (int_2_x[:-kh:stride, :-kw:stride] - int_2_x[:-kh:stride, kw::stride] - int_2_x[kh::stride, :-kw:stride] + int_2_x[kh::stride, kw::stride])/k_norm - mu_x**2
+    var_y = (int_2_y[:-kh:stride, :-kw:stride] - int_2_y[:-kh:stride, kw::stride] - int_2_y[kh::stride, :-kw:stride] + int_2_y[kh::stride, kw::stride])/k_norm - mu_y**2
+
+    cov_xy = (int_xy[:-kh:stride, :-kw:stride] - int_xy[:-kh:stride, kw::stride] - int_xy[kh::stride, :-kw:stride] + int_xy[kh::stride, kw::stride])/k_norm - mu_x*mu_y
+
+    mask_x = (var_x < 0)
+    mask_y = (var_y < 0)
+
+    var_x[mask_x] = 0
+    var_y[mask_y] = 0
+
+    cov_xy[mask_x + mask_y] = 0
+
+    return (mu_x, mu_y, var_x, var_y, cov_xy)
+
+
+def vif_gsm_model(pyr, subband_keys, M):
+    tol = 1e-15
+    s_all = []
+    lamda_all = []
+
+    for subband_key in subband_keys:
+        y = pyr[subband_key]
+        y_size = (int(y.shape[0]/M)*M, int(y.shape[1]/M)*M)
+        y = y[:y_size[0], :y_size[1]]
+
+        y_vecs = im2col(y, M, 1)
+        cov = np.cov(y_vecs)
+        lamda, V = np.linalg.eigh(cov)
+        lamda[lamda < tol] = tol
+        cov = V@np.diag(lamda)@V.T
+
+        y_vecs = im2col(y, M, M)
+
+        s = np.linalg.inv(cov)@y_vecs
+        s = np.sum(s * y_vecs, 0)/(M*M)
+        s = s.reshape((int(y_size[0]/M), int(y_size[1]/M)))
+
+        s_all.append(s)
+        lamda_all.append(lamda)
+
+    return s_all, lamda_all
+
+
+def vif_channel_est(pyr_ref, pyr_dist, subband_keys, M):
+    tol = 1e-15
+    g_all = []
+    sigma_vsq_all = []
+
+    for i, subband_key in enumerate(subband_keys):
+        y_ref = pyr_ref[subband_key]
+        y_dist = pyr_dist[subband_key]
+
+        lev = int(np.ceil((i+1)/2))
+        winsize = 2**lev + 1
+
+        y_size = (int(y_ref.shape[0]/M)*M, int(y_ref.shape[1]/M)*M)
+        y_ref = y_ref[:y_size[0], :y_size[1]]
+        y_dist = y_dist[:y_size[0], :y_size[1]]
+
+        mu_x, mu_y, var_x, var_y, cov_xy = moments(y_ref, y_dist, winsize, M)
+
+        g = cov_xy / (var_x + tol)
+        sigma_vsq = var_y - g*cov_xy
+
+        g[var_x < tol] = 0
+        sigma_vsq[var_x < tol] = var_y[var_x < tol]
+        var_x[var_x < tol] = 0
+
+        g[var_y < tol] = 0
+        sigma_vsq[var_y < tol] = 0
+
+        sigma_vsq[g < 0] = var_y[g < 0]
+        g[g < 0] = 0
+
+        sigma_vsq[sigma_vsq < tol] = tol
+
+        g_all.append(g)
+        sigma_vsq_all.append(sigma_vsq)
+
+    return g_all, sigma_vsq_all
+
+
+def vif(img_ref, img_dist, wavelet='steerable', full=False):
+    # https://github.com/abhinaukumar/vif/blob/main/vif_utils.py
+    assert wavelet in ['steerable', 'haar', 'db2', 'bio2.2'], 'Invalid choice of wavelet'
+    M = 3
+    sigma_nsq = 0.1
+
+    if wavelet == 'steerable':
+        from pyrtools.pyramids import SteerablePyramidSpace as SPyr
+        pyr_ref = SPyr(img_ref, 4, 5, 'reflect1').pyr_coeffs
+        pyr_dist = SPyr(img_dist, 4, 5, 'reflect1').pyr_coeffs
+        subband_keys = []
+        for key in list(pyr_ref.keys())[1:-2:3]:
+            subband_keys.append(key)
+    else:
+        from pywt import wavedec2
+        ret_ref = wavedec2(img_ref, wavelet, 'reflect', 4)
+        ret_dist = wavedec2(img_dist, wavelet, 'reflect', 4)
+        pyr_ref = {}
+        pyr_dist = {}
+        subband_keys = []
+        for i in range(4):
+            pyr_ref[(3-i, 0)] = ret_ref[i+1][0]
+            pyr_ref[(3-i, 1)] = ret_ref[i+1][1]
+            pyr_dist[(3-i, 0)] = ret_dist[i+1][0]
+            pyr_dist[(3-i, 1)] = ret_dist[i+1][1]
+            subband_keys.append((3-i, 0))
+            subband_keys.append((3-i, 1))
+        pyr_ref[4] = ret_ref[0]
+        pyr_dist[4] = ret_dist[0]
+
+    subband_keys.reverse()
+    n_subbands = len(subband_keys)
+
+    [g_all, sigma_vsq_all] = vif_channel_est(pyr_ref, pyr_dist, subband_keys, M)
+
+    [s_all, lamda_all] = vif_gsm_model(pyr_ref, subband_keys, M)
+
+    nums = np.zeros((n_subbands,))
+    dens = np.zeros((n_subbands,))
+    for i in range(n_subbands):
+        g = g_all[i]
+        sigma_vsq = sigma_vsq_all[i]
+        s = s_all[i]
+        lamda = lamda_all[i]
+
+        n_eigs = len(lamda)
+
+        lev = int(np.ceil((i+1)/2))
+        winsize = 2**lev + 1
+        offset = (winsize - 1)/2
+        offset = int(np.ceil(offset/M))
+
+        g = g[offset:-offset, offset:-offset]
+        sigma_vsq = sigma_vsq[offset:-offset, offset:-offset]
+        s = s[offset:-offset, offset:-offset]
+
+        for j in range(n_eigs):
+            nums[i] += np.mean(np.log(1 + g*g*s*lamda[j]/(sigma_vsq+sigma_nsq)))
+            dens[i] += np.mean(np.log(1 + s*lamda[j]/sigma_nsq))
+
+    if not full:
+        return np.mean(nums + 1e-4)/np.mean(dens + 1e-4)
+    else:
+        return np.mean(nums + 1e-4)/np.mean(dens + 1e-4), (nums + 1e-4), (dens + 1e-4)
+
+
+def vif_spatial(img_ref, img_dist, k=11, sigma_nsq=0.1, stride=1, full=False):
+    x = img_ref.astype('float32')
+    y = img_dist.astype('float32')
+
+    mu_x, mu_y, var_x, var_y, cov_xy = moments(x, y, k, stride)
+
+    g = cov_xy / (var_x + 1e-10)
+    sv_sq = var_y - g * cov_xy
+
+    g[var_x < 1e-10] = 0
+    sv_sq[var_x < 1e-10] = var_y[var_x < 1e-10]
+    var_x[var_x < 1e-10] = 0
+
+    g[var_y < 1e-10] = 0
+    sv_sq[var_y < 1e-10] = 0
+
+    sv_sq[g < 0] = var_x[g < 0]
+    g[g < 0] = 0
+    sv_sq[sv_sq < 1e-10] = 1e-10
+
+    vif_val = np.sum(np.log(1 + g**2 * var_x / (sv_sq + sigma_nsq)) + 1e-4)/np.sum(np.log(1 + var_x / sigma_nsq) + 1e-4)
+    if (full):
+        # vif_map = (np.log(1 + g**2 * var_x / (sv_sq + sigma_nsq)) + 1e-4)/(np.log(1 + var_x / sigma_nsq) + 1e-4)
+        # return (vif_val, vif_map)
+        return (np.sum(np.log(1 + g**2 * var_x / (sv_sq + sigma_nsq)) + 1e-4), np.sum(np.log(1 + var_x / sigma_nsq) + 1e-4), vif_val)
+    else:
+        return vif_val
+
+
+def msvif_spatial(img_ref, img_dist, k=11, sigma_nsq=0.1, stride=1, full=False):
+    x = img_ref.astype('float32')
+    y = img_dist.astype('float32')
+
+    n_levels = 5
+    nums = np.ones((n_levels,))
+    dens = np.ones((n_levels,))
+    for i in range(n_levels-1):
+        if np.min(x.shape) <= k:
+            break
+        nums[i], dens[i], _ = vif_spatial(x, y, k, sigma_nsq, stride, full=True)
+        x = x[:(x.shape[0]//2)*2, :(x.shape[1]//2)*2]
+        y = y[:(y.shape[0]//2)*2, :(y.shape[1]//2)*2]
+        x = (x[::2, ::2] + x[1::2, ::2] + x[1::2, 1::2] + x[::2, 1::2])/4
+        y = (y[::2, ::2] + y[1::2, ::2] + y[1::2, 1::2] + y[::2, 1::2])/4
+
+    if np.min(x.shape) > k:
+        nums[-1], dens[-1], _ = vif_spatial(x, y, k, sigma_nsq, stride, full=True)
+    msvifval = np.sum(nums) / np.sum(dens)
+
+    if full:
+        return msvifval, nums, dens
+    else:
+        return msvifval
+
+
+def vif_approach_loss(A, B, F):
+    return 1-vif_metric(A, B, F)
+
+
+def vif_metric(A, B, F):
+    return 0.5* vif(A,F) + 0.5*vif(B,F)
 
 ###########################################################################################
 
@@ -130,14 +272,18 @@ def main():
 
     transform = transforms.Compose([transforms.ToTensor()])
 
-    vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
-    ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
-    fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+    # vis = to_tensor(Image.open('../imgs/TNO/vis/9.bmp')).unsqueeze(0)
+    # ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
+    # fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
+    vis = Image.open('../imgs/TNO/vis/9.bmp')
+    ir = Image.open('../imgs/TNO/ir/9.bmp')
+    fused = Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')
 
-    print(f'VIF:{vif_metric(vis,ir,fused)}')
-    print(f'VIF:{vif_metric(vis,vis,vis)}')
-    print(f'VIF:{vif_metric(vis,vis,fused)}')
-    print(f'VIF:{vif_metric(vis,vis,ir)}')
+    print(f'VIF(vis,vis):{vif(vis, vis)}')
+    print(f'VIF(vis,fuse):{vif(vis, fused)}')
+    print(f'VIF(vis,ir):{vif(vis, ir)}')
+    # Download from https://github.com/abhinaukumar/vif/blob/main/vif_utils.py
+    # This is not Differentable!!!!
 
 if __name__ == '__main__':
     main()

@@ -330,8 +330,8 @@ def main():
     # 下面的例子演示图像信息熵在不同类型图像之间的变化。
     # 通过生成均匀分布、随机分布、纯色、黑白分割等不同特性的图像，
     # 函数展示了这些图像在信息熵上的差异。
-    # visualize_image_entropy(16)
-    # visualize_image_entropy(64)
+    visualize_image_entropy(16)
+    visualize_image_entropy(64)
 
     # 下面的例子演示了通过核密度估计与统计的直方图的区别
     # histogram_compare(ir,'IR Image')

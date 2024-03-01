@@ -4,9 +4,9 @@ import kornia
 ###########################################################################################
 
 __all__ = [
-    'q_cb',
-    'q_cb_approach_loss',
-    'q_cb_metric'
+    'q_cb','q_cbm','q_cbb','q_cbd',
+    'q_cb_approach_loss','q_cbm_approach_loss','q_cbb_approach_loss','q_cbd_approach_loss',
+    'q_cb_metric','q_cbm_metric','q_cbb_metric','q_cbd_metric'
 ]
 
 def _normalize(data):
@@ -28,7 +28,7 @@ def _freq_meshgrid(size, d=1.0):
         shift = p2 if n % 2 == 0 else p2 - 1
         return torch.roll(results, shift, dims=0)  # 将零频率移到中心
     _, _, m, n = size
-    return torch.meshgrid(_line(m,d)*2, _line(n,d)*2)
+    return torch.meshgrid(_line(m,d)*2, _line(n,d)*2, indexing='ij')
 
 def gaussian2d(sigma,size=31):
       meshgrid = kornia.create_meshgrid(size, size, normalized_coordinates=False)
@@ -40,12 +40,11 @@ def gaussian2d(sigma,size=31):
 G1 = gaussian2d(sigma=2,size=31) #  VIFB 这么设置的参数
 G2 = gaussian2d(sigma=4,size=31)
 
-def contrast_sensitivity_filtering_Sd(size=None,mode='frequency'):
-    # f0 f2 a
-    f0 = 15.3870;f1 = 1.3456;a = 0.7622 # A.B. Watson, A.J. Ahumada Jr., A standard model for foveal detection of spatial contrast, Journal of Vision 5 (9) (2005) 717–740.
-
+def contrast_sensitivity_filtering_Sd(size=None,mode='frequency',filter='DoG'):
     # kernel size
     if mode == 'frequency':
+        if size == None:
+            raise ValueError("Should input the size of image")
         _, _, M, N = size # VIFB 希望频率的 dog 和原图一样大
         m = M/30;n = N/30 # VIFB里边这么实现的
         # m = M/2; n = N/2  # DoG1
@@ -58,19 +57,22 @@ def contrast_sensitivity_filtering_Sd(size=None,mode='frequency'):
         raise ValueError("`mode` should only be 'frequency' or 'spatial'")
 
     # meshgrid
-    #u,v = torch.meshgrid(torch.linspace(-1, 1, N, dtype=torch.float64), torch.linspace(-1, 1, M, dtype=torch.float64))
-    #u = u*n0;v = v*m0
-    #meshgrid = kornia.create_meshgrid(M, N, normalized_coordinates=False) # Python可以选择是否归一化
-    #meshgrid = kornia.create_meshgrid(M, N, normalized_coordinates=True) # 与 VIFB 一致，归一化然后放缩，但精度不够，没有替代方案
-    # u = (meshgrid[0, :, :, 0]).to(torch.float64) * n
-    # v = (meshgrid[0, :, :, 1]).to(torch.float64) * m
     (u, v) = _freq_meshgrid(size)
     u = u * n
     v = v * m
 
     # Dog in Frequency
     r = torch.sqrt(u**2 + v**2)
-    Sd_freq_domain = torch.exp(-(r / f0)**2) - a * torch.exp(-(r / f1)**2)
+    if filter == 'DoG':
+        f0 = 15.3870;f1 = 1.3456;a = 0.7622 # A.B. Watson, A.J. Ahumada Jr., A standard model for foveal detection of spatial contrast, Journal of Vision 5 (9) (2005) 717–740.
+        Sd_freq_domain = torch.exp(-(r / f0)**2) - a * torch.exp(-(r / f1)**2)
+    elif filter == 'Barton':
+        Sd_freq_domain = r * torch.exp(-0.25*r)
+    elif filter == 'Mannos':
+        Sd_freq_domain = 2.6*(0.0192+0.114*r)*torch.exp(-(0.114*r)**1.1)
+    else:
+        raise ValueError("`mode` should only be 'DoG' or 'Barton' or 'Mannos'")
+
     if mode == 'frequency':
         return Sd_freq_domain
     elif mode == 'spatial':
@@ -78,55 +80,32 @@ def contrast_sensitivity_filtering_Sd(size=None,mode='frequency'):
         Sd_time_domain /= torch.max(torch.abs(Sd_time_domain))
         return Sd_time_domain.real
 
-def contrast_sensitivity_filtering_freq(im, mode='frequency'):
+def contrast_sensitivity_filtering_freq(im, mode='frequency',filter='DoG'):
     # 计算 Sd 用于滤波
-    Sd = contrast_sensitivity_filtering_Sd(im.size(),mode)
+    Sd = contrast_sensitivity_filtering_Sd(im.size(),mode,filter)
     #print(Sd.shape)
     if mode == 'frequency': # VIFB 的方法, 但是会导致梯度消失
         # 进行二维傅里叶变换
         im_fft = torch.fft.fft2(im)
-        # if im.is_leaf == False:
-        #     im_fft.retain_grad()
-        #     im_fft.real.mean().backward()
-        #     print (im_fft.grad)
-        #     raise
         # fftshift 操作
         im_fft_shifted = torch.roll(im_fft, shifts=(im.shape[2]//2, im.shape[3]//2), dims=(2, 3))
-        # if im_fft_shifted.is_leaf == False:
-        #     im_fft_shifted.retain_grad()
-        #     im_fft_shifted.real.mean().backward()
-        #     print (im_fft_shifted.grad)
-        #     raise
         # 点乘 Sd
         im_filtered_shifted = im_fft_shifted * Sd
-        # if im_filtered_shifted.is_leaf == False:
-        #     im_filtered_shifted.retain_grad()
-        #     im_filtered_shifted.real.mean().backward()
-        #     print (im_filtered_shifted.grad)
-        #     raise
         # ifftshift 操作
         im_filtered = torch.roll(im_filtered_shifted, shifts=(-im.shape[2]//2, -im.shape[3]//2), dims=(2, 3))
-        # if im_filtered.is_leaf == False:
-        #     im_filtered.retain_grad()
-        #     im_filtered.real.mean().backward()
-        #     print (im_filtered.grad)
-        #     raise
         # 逆二维傅里叶变换
-        im = torch.fft.ifft2(im_filtered)
-        # if im.is_leaf == False:
-        #     im.retain_grad()
-        #     im.real.mean().backward()
-        #     print (im.grad)
-        #     raise
-        return im
+        return torch.fft.ifft2(im_filtered)
+
     elif mode == 'spatial':
         # 使用时域卷积操作进行滤波
         return torch.nn.functional.conv2d(im, Sd.unsqueeze(0).unsqueeze(0), padding=Sd.size(0)//2)
+
     else:
         raise Exception("mode should only be `spatial` or `frequency`")
 
 def q_cb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
-          border_type: str = 'constant', mode: str = 'frequency', normalize: bool = False) -> torch.Tensor:
+          border_type: str = 'constant', mode: str = 'frequency',
+          filter: str = 'DoG', normalize: bool = False) -> torch.Tensor:
     """
     Calculate the Q_CB (Quality Assessment for image Combined with Blurred and Fused) metric.
 
@@ -136,6 +115,7 @@ def q_cb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
         imgF (torch.Tensor): The fused image tensor.
         border_type (str, optional): Type of border extension. Default is 'constant'.
         mode (str, optional): Mode for filtering ('frequency' or 'spatial'). Default is 'frequency'.
+        filter (str, optional): Type of filter to use for saliency calculation. Default is 'DoG'.
         normalize (bool, optional): Whether to normalize input images. Default is True.
 
     Returns:
@@ -155,9 +135,9 @@ def q_cb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
     #print('1. Sd:',torch.mean(Sd))
 
     # Contrast sensitivity filtering with DoG --- Frequency Domain
-    fused1 = contrast_sensitivity_filtering_freq(imgA,mode)
-    fused2 = contrast_sensitivity_filtering_freq(imgB,mode)
-    ffused = contrast_sensitivity_filtering_freq(imgF,mode)
+    fused1 = contrast_sensitivity_filtering_freq(imgA,mode,filter)
+    fused2 = contrast_sensitivity_filtering_freq(imgB,mode,filter)
+    ffused = contrast_sensitivity_filtering_freq(imgF,mode,filter)
     # if ffused.is_leaf == False:
     #     ffused.retain_grad()
     #     ffused.real.mean().backward()
@@ -216,15 +196,42 @@ def q_cb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
 
     return torch.mean(Q)
 
+def q_cbm(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
+          border_type: str = 'constant', mode: str = 'frequency',
+          normalize: bool = False) -> torch.Tensor:
+    return q_cb(imgA,imgB,imgF,border_type,mode,'Mannos',normalize)
+
+def q_cbb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
+          border_type: str = 'constant', mode: str = 'frequency',
+          normalize: bool = False) -> torch.Tensor:
+    return q_cb(imgA,imgB,imgF,border_type,mode,'Barton',normalize)
+
+def q_cbd(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
+          border_type: str = 'constant', mode: str = 'frequency',
+          normalize: bool = False) -> torch.Tensor:
+    return q_cb(imgA,imgB,imgF,border_type,mode,'DoG',normalize)
+
 # 采用相同图片的 q_cb 减去不同图片的 q_cb
 def q_cb_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    return 1-q_cb(A, A, F)
+    return 1-q_cbd(A, A, F)
+def q_cbm_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_cbm(A, A, F)
+def q_cbb_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_cbb(A, A, F)
+def q_cbd_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return 1-q_cbd(A, A, F)
 
 # 与 VIFB 统一
 def q_cb_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     # 论文方案mode是frequency，结果复现较为准确, 改成spatial会明显单提速，但是误差提高
     # 论文方案normalize=True
     return q_cb(A, B, F, border_type='constant', mode='frequency', normalize=True)
+def q_cbm_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cbm(A, B, F, border_type='constant', mode='frequency', normalize=True)
+def q_cbb_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cbb(A, B, F, border_type='constant', mode='frequency', normalize=True)
+def q_cbd_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cbd(A, B, F, border_type='constant', mode='frequency', normalize=True)
 
 ###########################################################################################
 
@@ -242,13 +249,16 @@ def main():
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0).type(torch.float64)
 
     # Default: With normalize, Frequency(not spatial)
-    print('With normalize, Different Images: ',q_cb(vis,ir,fused,mode='frequency',normalize=True))
-    print('With normalize, Same Images: ',q_cb(vis,vis,vis,mode='frequency',normalize=True))
-    print('Without normalize, Different Images: ',q_cb(vis,ir,fused,mode='frequency',normalize=False))
-    print('Without normalize, Same Images (VIS): ',q_cb(vis,vis,vis,mode='frequency',normalize=False))
-    print('Without normalize, Same Images (IR): ',q_cb(ir,ir,ir,mode='frequency',normalize=False))
-    print('With normalize, Different Image (spatial)',q_cb(vis,ir,fused,mode='spatial'))
-    print('With normalize, Same Image (spatial)',q_cb(vis,vis,vis,mode='spatial'))
+    # print('With normalize, Different Images: ',q_cb(vis,ir,fused,mode='frequency',normalize=True))
+    # print('With normalize, Same Images: ',q_cb(vis,vis,vis,mode='frequency',normalize=True))
+    # print('Without normalize, Different Images: ',q_cb(vis,ir,fused,mode='frequency',normalize=False))
+    # print('Without normalize, Same Images (VIS): ',q_cb(vis,vis,vis,mode='frequency',normalize=False))
+    # print('Without normalize, Same Images (IR): ',q_cb(ir,ir,ir,mode='frequency',normalize=False))
+    # print('With normalize, Different Image (spatial)',q_cb(vis,ir,fused,mode='spatial'))
+    # print('With normalize, Same Image (spatial)',q_cb(vis,vis,vis,mode='spatial'))
+    print(f"Q_CBM: {q_cbm_metric(vis,ir,fused)}")
+    print(f"Q_CBB: {q_cbb_metric(vis,ir,fused)}")
+    print(f"Q_CBD: {q_cbd_metric(vis,ir,fused)}")
 
 if __name__ == '__main__':
   main()

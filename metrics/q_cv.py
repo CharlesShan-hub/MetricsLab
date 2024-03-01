@@ -4,9 +4,9 @@ import kornia
 ###########################################################################################
 
 __all__ = [
-    'q_cv',
-    'q_cv_approach_loss',
-    'q_cv_metric'
+    'q_cv','q_cvm','q_cvd','q_cva',
+    'q_cv_approach_loss','q_cvm_approach_loss','q_cvd_approach_loss','q_cva_approach_loss',
+    'q_cv_metric','q_cvm_metric','q_cvd_metric','q_cva_metric'
 ]
 
 def _normalize(data):
@@ -31,7 +31,8 @@ def _freq_meshgrid(size, d=1.0):
     return torch.meshgrid(_line(m,d)*2, _line(n,d)*2, indexing='ij')
 
 def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 16,
-          border_type: str = 'constant', normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
+    border_type: str = 'constant', filter: str = 'Mannos',
+    normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
     """
     Calculate the Q_CV (Quality Assessment for image Corner and Vertices) metric for image fusion.
 
@@ -41,17 +42,14 @@ def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 1
         F (torch.Tensor): The fused image tensor.
         window_size (int, optional): The size of the window for local region saliency calculation. Default is 16.
         border_type (str, optional): Type of border extension. Default is 'constant'.
+        filter (str, optional): Type of filter to use for saliency calculation. Default is 'Mannos'.
         normalize (bool, optional): Whether to normalize input images to the range [0, 1]. Default is True.
         eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
         torch.Tensor: The Q_CV metric value.
     """
-    # Step 0: Params and Normalize
-    alpha_c=1
-    alpha_s=0.685
-    f_c=97.3227
-    f_s=12.1653
+    # Step 0: Normalize
     alpha=5 #alpha = 1, 2, 3, 4, 5, 10, 15. This value is adjustable.;-)
     if normalize:
         [A, B, F] = [_normalize(I) for I in [A, B, F]]
@@ -88,15 +86,29 @@ def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 1
     u = u * (A.shape[-2]/8) # VIFB里边写的 8
     v = v * (A.shape[-1]/8) # VIFB里边写的 8
     r = torch.sqrt(u**2 + v**2)
-    theta_m = 2.6 * (0.0192 + 0.144 * r) * torch.exp(-torch.pow(0.144 * r, 1.1)) # Mannos-Skarison's filter
-    def filter(D):
+    if filter == 'Mannos': # Default
+        theta = 2.6 * (0.0192 + 0.144 * r) * torch.exp(-torch.pow(0.144 * r, 1.1)) # Mannos-Skarison's filter
+    elif filter == 'Daly':
+        temp = r.clone()
+        r[temp==0] = 1
+        buff = 0.008 / r**3 + 1
+        buff = buff ** (-0.2)
+        buff1 = -0.3 * r * torch.sqrt(1 + 0.06*torch.exp(0.3*r))
+        theta = (buff**(-0.2)) * (1.42*r*torch.exp(buff1))
+        theta[temp==0] = 0
+    elif filter == 'Ahumada':
+        alpha_c=1; alpha_s=0.685; f_c=97.3227; f_s=12.1653
+        theta=alpha_c*torch.exp(-(r/f_c)**2)-alpha_s*torch.exp(-(r/f_s)**2);
+    else:
+        raise ValueError("`filter` should only be 'Mannos' or 'Daly' or 'Ahumada'")
+    def _filter(D):
         FD = torch.fft.fft2(D)
         FDS = torch.roll(FD, shifts=(FD.shape[2]//2, FD.shape[3]//2), dims=(2, 3))
-        FDS = FDS * theta_m
+        FDS = FDS * theta
         FD = torch.roll(FDS, shifts=(-FDS.shape[2]//2, -FDS.shape[3]//2), dims=(2, 3))
         return torch.fft.ifft2(FD)
-    DFA = torch.nn.functional.pad(filter(DA).real, (0, pad_H, 0, pad_L), mode='constant', value=0)
-    DFB = torch.nn.functional.pad(filter(DB).real, (0, pad_H, 0, pad_L), mode='constant', value=0)
+    DFA = torch.nn.functional.pad(_filter(DA).real, (0, pad_H, 0, pad_L), mode='constant', value=0)
+    DFB = torch.nn.functional.pad(_filter(DB).real, (0, pad_H, 0, pad_L), mode='constant', value=0)
     MDA = torch.zeros(H, L); MDB = torch.zeros(H, L)
     for i in range(H):
         for j in range(L):
@@ -106,11 +118,44 @@ def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 1
             MDB[i, j] = torch.mean(torch.pow(block, 2))
     return torch.sum(RA*MDA+RB*MDB) / torch.sum(RA+RB)
 
+def q_cvm(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 16,
+    border_type: str = 'constant',normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
+
+    return q_cv(A,B,F,window_size,border_type,'Mannos',normalize,eps)
+
+def q_cvd(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 16,
+    border_type: str = 'constant',normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
+
+    return q_cv(A,B,F,window_size,border_type,'Daly',normalize,eps)
+
+def q_cva(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 16,
+    border_type: str = 'constant',normalize: bool = True, eps: float = 1e-10) -> torch.Tensor:
+
+    return q_cv(A,B,F,window_size,border_type,'Ahumada',normalize,eps)
+
 def q_cv_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return q_cv(A, A, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
 
+def q_cvm_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cvm(A, A, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
+def q_cvd_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cvd(A, A, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
+def q_cva_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cva(A, A, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
 def q_cv_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    return q_cv(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+    return q_cvm(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
+def q_cvm_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cvm(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
+def q_cvd_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cvd(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
+
+def q_cva_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
+    return q_cva(A, B, F, window_size=16, border_type='constant', normalize=True, eps=1e-10)
 
 ###########################################################################################
 
@@ -127,10 +172,13 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'QCV(ir,vis,fused):{q_cv(vis,ir,fused)}')
-    print(f'QCV(vis,vis,vis):{q_cv(vis,vis,vis)}')
-    print(f'QCV(vis,vis,fused):{q_cv(vis,vis,fused)}')
-    print(f'QCV(vis,vis,ir):{q_cv(vis,vis,ir)}')
+    # print(f'QCV(ir,vis,fused):{q_cv(vis,ir,fused)}')
+    # print(f'QCV(vis,vis,vis):{q_cv(vis,vis,vis)}')
+    # print(f'QCV(vis,vis,fused):{q_cv(vis,vis,fused)}')
+    # print(f'QCV(vis,vis,ir):{q_cv(vis,vis,ir)}')
+    print(f'QCVM(ir,vis,fused):{q_cvm(vis,ir,fused)}')
+    print(f'QCVD(ir,vis,fused):{q_cvd(vis,ir,fused)}')
+    print(f'QCVA(ir,vis,fused):{q_cva(vis,ir,fused)}')
 
 if __name__ == '__main__':
     main()

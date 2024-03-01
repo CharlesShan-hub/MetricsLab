@@ -24,11 +24,6 @@ def q_w(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
     Returns:
         torch.Tensor: The q_w quality index between the two input images and their fusion.
     """
-    def modify(A):
-        X = kornia.filters.filter2d(A*255,torch.tensor([[[1,0,-1],[1,0,-1],[ 1, 0,-1]]]),border_type='constant')
-        Y = kornia.filters.filter2d(A*255,torch.tensor([[[1,1, 1],[0,0, 0],[-1,-1,-1]]]),border_type='constant')
-        return torch.sqrt(X**2 + Y**2 + eps)
-    [A, B, F] = [modify(i) for i in [A, B, F]]
 
     def sigma2(A):
         kernel = kornia.filters.get_gaussian_kernel1d(window_size, 1.5, device=A.device, dtype=A.dtype)
@@ -68,7 +63,7 @@ def q_w_approach_loss(A: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
     return 1-q_w(A, A, F, window_size=11, eps=1e-10)
 
 def q_w_metric(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor) -> torch.Tensor:
-    return q_w(A, B, F, window_size=11, eps=1e-10)
+    return q_w(A*255.0, B*255.0, F*255.0, window_size=11, eps=1e-10)
 
 ###########################################################################################
 
@@ -85,13 +80,13 @@ def main():
     ir = to_tensor(Image.open('../imgs/TNO/ir/9.bmp')).unsqueeze(0)
     fused = to_tensor(Image.open('../imgs/TNO/fuse/U2Fusion/9.bmp')).unsqueeze(0)
 
-    print(f'Q_W:{q_w(vis,ir,fused)}')
-    print(f'Q_W:{q_w(vis,vis,vis)}')
-    print(f'Q_W:{q_w(vis,vis,fused)}')
-    print(f'Q_W:{q_w(vis,vis,ir)}')
-    print(f'Q_W:{q_w(ir,ir,ir)}')
-    print(f'Q_W:{q_w(ir,ir,fused)}')
-    print(f'Q_W:{q_w(ir,ir,vis)}')
+    print(f'Q_W:{q_w_metric(vis,ir,fused)}')
+    print(f'Q_W:{q_w_metric(vis,vis,vis)}')
+    print(f'Q_W:{q_w_metric(vis,vis,fused)}')
+    print(f'Q_W:{q_w_metric(vis,vis,ir)}')
+    print(f'Q_W:{q_w_metric(ir,ir,ir)}')
+    print(f'Q_W:{q_w_metric(ir,ir,fused)}')
+    print(f'Q_W:{q_w_metric(ir,ir,vis)}')
 
 if __name__ == '__main__':
     main()

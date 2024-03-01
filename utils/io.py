@@ -77,7 +77,7 @@ def save_approach_result(folder_name,fuse,vis_result,ir_result,vis,ir,base_path=
   _draw(np.abs(ir.astype(int)-ir_result.astype(int)).astype(np.uint8),"Error",2,5,10)
   # plt.show()
   plt.tight_layout()
-  plt.savefig(os.path.join(base_path,folder_name,'result.png'))
+  plt.savefig(os.path.join(base_path,folder_name,'result.png'), dpi=300)
   plt.close()
 
 def save_info(folder_name,num_epochs,learning_rate,seed,base_path='./logs'):
