@@ -32,6 +32,7 @@ from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
 from metrics.nrmse import *    # Normalized Root Mean Square Error
 from metrics.ergas import *    # Normalized Global Error
+from metrics.q import *        # REV
 
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度

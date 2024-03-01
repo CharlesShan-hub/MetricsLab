@@ -51,6 +51,7 @@ from metrics import q_p_metric
 from metrics import n_abf_metric
 from metrics import pww_metric
 from metrics import mb_metric
+from metrics import q
 
 def main():
     name_list = ['U2Fusion','ADF','CBF', 'CNN', 'FPDE', 'GFCE', 'GTF', 'HMSD_GF', 'IFEVIP', 'LatLRR', 'MSVD', 'TIF', 'VSMWLS']
@@ -106,6 +107,7 @@ def main():
         # 'VIF': vif_metric,           # 从网上找的代码, 不可微
         # 'VIFF': viff_metric,         # 通过，完全一致（Many）
         # 'ERGAS': ergas_metric,       # 通过
+        # 'q': q_metric,               # 通过，完全一致 http://live.ece.utexas.edu/research/Quality/zhou_research_anch/quality_index/demo.html
         # 'Q_P': q_p_metric,           #
     }
     metrics_data = []
