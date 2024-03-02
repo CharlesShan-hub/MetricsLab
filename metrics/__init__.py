@@ -33,6 +33,8 @@ from metrics.rmse import *     # VIFB - 均方误差
 from metrics.nrmse import *    # Normalized Root Mean Square Error
 from metrics.ergas import *    # Normalized Global Error
 from metrics.q import *        # REV
+from metrics.wfqi import *
+from metrics.efqi import *
 
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
@@ -41,6 +43,7 @@ from metrics.ei import *       # VIFB - 边缘强度
 # from metrics.pfe import *      # Many
 from metrics.sd import *       # VIFB - 标准差
 from metrics.sf import *       # VIFB - 空间频率
+from metrics.q_sf import *     # OE - 基于空间频率的指标
 from metrics.q_abf import *    # VIFB - 基于梯度的融合性能
 from metrics.eva import *      # Zhihu - 点锐度
 from metrics.asm import *      # Zhihu - 角二阶矩 - 不可微!!!
@@ -59,7 +62,6 @@ from metrics.viff import *     # Tang - 视觉保真度
 
 # 新指标暂时没分类
 # from metrics.df import *       #
-# from metrics.q_sf import *     #
 # from metrics.q_mi import *     #
 # from metrics.q_s import *      #
 # from metrics.q_e import *      #
