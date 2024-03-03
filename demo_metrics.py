@@ -54,6 +54,7 @@ from metrics import mb_metric
 from metrics import q_metric
 from metrics import wfqi_metric
 from metrics import efqi_metric
+from metrics import q_sf_metric
 from metrics import q_h_metric
 
 def main():
@@ -110,10 +111,11 @@ def main():
         # 'VIF': vif_metric,           # 从网上找的代码, 不可微
         # 'VIFF': viff_metric,         # 通过，完全一致（Many）
         # 'ERGAS': ergas_metric,       # 通过
-        # 'UIQI': q_metric,               # 通过，完全一致 http://live.ece.utexas.edu/research/Quality/zhou_research_anch/quality_index/demo.html
-        # 'WFQI': wfqi_metric,
-        # 'EFQI': efqi_metric,
-        'Q_H': q_h_metric,
+        # 'UIQI': q_metric,            # 通过，完全一致 http://live.ece.utexas.edu/research/Quality/zhou_research_anch/quality_index/demo.html
+        # 'WFQI': wfqi_metric,         # 公式一致
+        # 'EFQI': efqi_metric,         # 公式一致
+        # 'Q_SF':q_sf_metric,          # 公式一致
+        'Q_H': q_h_metric,           #
         # 'Q_P': q_p_metric,           #
     }
     metrics_data = []
