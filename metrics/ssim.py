@@ -9,7 +9,25 @@ __all__ = [
     'ssim_metric'
 ]
 
-# https://kornia.readthedocs.io/en/latest/metrics.html#kornia.metrics.ssim
+"""
+Calculate the Structural Similarity Index (SSIM) between two images.
+
+Args:
+    img1 (torch.Tensor): The first input image tensor.
+    img2 (torch.Tensor): The second input image tensor.
+    window_size (int): The size of the sliding window for SSIM calculation.
+    max_val (float, optional): The maximum value of the input images. Default is 1.0.
+    eps (float, optional): Small constant to avoid division by zero. Default is 1e-12.
+    padding (str, optional): Padding mode for the convolution. Default is 'same'.
+
+Returns:
+    torch.Tensor: The SSIM index between the two input images.
+
+Reference:
+    [1] Z. Wang, A. C. Bovik, H. R. Sheikh, E. P. Simoncelli et al., "Image quality assessment: from error visibility
+    to structural similarity," IEEE transactions on image processing, vol. 13, no. 4, pp. 600-612, 2004.
+    [2] Document: https://kornia.readthedocs.io/en/latest/metrics.html#kornia.metrics.ssim
+"""
 ssim = kornia.metrics.ssim
 
 # https://kornia.readthedocs.io/en/latest/losses.html#kornia.losses.ssim_loss

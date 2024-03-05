@@ -17,12 +17,16 @@ def q_abf(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor, border_typ
         imgA (torch.Tensor): The first input image tensor.
         imgB (torch.Tensor): The second input image tensor.
         imgF (torch.Tensor): The fused image tensor.
-        border_type (str, optional): Type of border extension. Default is 'constant' for adapt VIFB, but
-                in kornia border_type default is 'reflection'
+        border_type (str, optional): Type of border extension. Default is 'constant' for
+            adapt VIFB, but in kornia border_type default is 'reflection'
         eps (float, optional): A small value to avoid numerical instability. Default is 1e-10.
 
     Returns:
         torch.Tensor: The Q_ABF metric value.
+
+    Reference:
+        [1] C. S. Xydeas and P. V. V., "Objective image fusion performance measure," Military
+        Technical Courier, vol. 36, no. 4, pp. 308-309, 2000.
     """
     # 参数
     Tg, kg, Dg = 0.9994, -15, 0.5

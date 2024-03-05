@@ -20,6 +20,11 @@ def ei(tensor: torch.Tensor, border_type: str = 'replicate', eps: float = 1e-10)
 
     Returns:
         torch.Tensor: The edge intensity of the input tensor.
+
+    Reference:
+        [1] B. Rajalingam and R. Priya, "Hybrid multimodality medical image fusion
+        technique for feature enhancement in medical diagnosis," International Journal
+        of Engineering Science Invention, 2018.
     """
     # 使用Sobel算子计算水平和垂直梯度
     grad_x = kornia.filters.filter2d(tensor,torch.tensor([[[ 1,  2,  1],[ 0,  0,  0],[-1, -2, -1]]]),border_type=border_type)

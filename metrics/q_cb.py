@@ -120,6 +120,11 @@ def q_cb(imgA: torch.Tensor, imgB: torch.Tensor, imgF: torch.Tensor,
 
     Returns:
         torch.Tensor: The Q_CB metric value.
+
+    Reference:
+        [1] Yin Chen et al., "A new automated quality assessment algorithm for image fusion,"
+        Image and Vision Computing, 27 (2009) 1421-1432.
+        [2] MATLAB code for the metric by Chen and Blum: https://github.com/zhengliu6699/imageFusionMetrics/blob/master/metricChenBlum.m
     """
     # mode = 'spatial', mode = 'frequency'
     # Normalize

@@ -48,6 +48,11 @@ def q_cv(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor, window_size: int = 1
 
     Returns:
         torch.Tensor: The Q_CV metric value.
+
+    Reference:
+        [1] H. Chen and P. K. Varshney, "A human perception inspired quality metric for image fusion
+        based on regional information," Information fusion, vol. 8, no. 2, pp. 193-207, 2007.
+        [2] Source code: https://github.com/zhengliu6699/imageFusionMetrics/blob/master/metricChen.m
     """
     # Step 0: Normalize
     alpha=5 #alpha = 1, 2, 3, 4, 5, 10, 15. This value is adjustable.;-)

@@ -23,6 +23,11 @@ def en(grey_tensor: torch.Tensor, bandwidth: float = 0.1, eps: float = 1e-10, is
 
     Returns:
         torch.Tensor: The entropy of the grayscale image.
+
+    Reference:
+        [1] V. Aardt and Jan, "Assessment of image fusion procedures using entropy,
+        image quality, and multispectral classification," Journal of Applied Remote
+        Sensing, vol. 2, no. 1, p. 023522, 2008.
     """
     if is_pdf == False:
         # 将灰度图像值缩放到范围[0, 255]

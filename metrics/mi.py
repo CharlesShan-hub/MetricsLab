@@ -23,6 +23,10 @@ def mi(image1: torch.Tensor, image2: torch.Tensor, bandwidth: float = 0.1, eps: 
 
     Returns:
         torch.Tensor: The differentiable mutual information between the two images.
+
+    Reference:
+        [1] G. Qu, D. Zhang, and P. Yan, "Information measure for performance of image fusion,"
+        Electronics letters, vol. 38, no. 7, pp. 313-315, 2002.
     """
     # 将图片拉平成一维向量,将一维张量转换为二维张量
     if normalize == True:

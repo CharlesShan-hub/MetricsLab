@@ -12,7 +12,6 @@ def psnr(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
     MAX: float = 1, eps: float = 1e-10) -> torch.Tensor: # 改造成 VIFB 提出的用于融合的 PSNR
     """
     Calculate the Peak Signal-to-Noise Ratio (PSNR) for image fusion.
-    see: https://jason-chen-1992.weebly.com/home/-peak-single-to-noise-ratio
 
     Args:
         A (torch.Tensor): The first input image tensor.
@@ -23,6 +22,12 @@ def psnr(A: torch.Tensor, B: torch.Tensor, F: torch.Tensor,
 
     Returns:
         torch.Tensor: The PSNR value for the fused image.
+
+    Reference:
+        [1] P. Jagalingam and A. V. Hegde, "A review of quality metrics for fused image,"
+        Aquatic Procedia, vol. 4, no. Icwrcoe, pp. 133-142, 2015.
+        [2] Peak Signal-to-Noise Ratio (PSNR), Available online:
+        https://jason-chen-1992.weebly.com/home/-peak-single-to-noise-ratio
     """
     # 计算两个输入图像与融合图像的均方误差（MSE）
     MSE1 = torch.mean((A - F)**2)

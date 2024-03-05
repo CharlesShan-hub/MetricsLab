@@ -19,6 +19,10 @@ def sf(tensor: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
 
     Returns:
         torch.Tensor: The standard frequency of the input tensor.
+
+    Reference:
+        [1] A. M. Eskicioglu and P. S. Fisher, "Image quality measures and their performance,"
+        IEEE Transactions on communications, vol. 43, no. 12, pp. 2959-2965, 1995.
     """
     # 使用 Sobel 算子计算水平和垂直梯度 - Old
     grad_x = kornia.filters.filter2d(tensor,torch.tensor([[1,  -1]]).unsqueeze(0),padding='valid')

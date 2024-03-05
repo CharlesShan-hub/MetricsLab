@@ -15,6 +15,7 @@ from metrics.q_ncie import *   # MEFB - 非线性相关性
 from metrics.snr import *      # Many - 信噪比
 from metrics.psnr import *     # VIFB - 峰值信噪比
 from metrics.cc import *       # Tang - 相关系数
+from metrics.scc import *
 from metrics.scd import *      # Tang - 差异相关和
 
 # 结构相似性
@@ -32,6 +33,7 @@ from metrics.mse import *      # VIFB - 均方误差
 from metrics.rmse import *     # VIFB - 均方误差
 from metrics.nrmse import *    # Normalized Root Mean Square Error
 from metrics.ergas import *    # Normalized Global Error
+from metrics.q_h import *      # OB
 from metrics.q import *        # REV
 from metrics.wfqi import *
 from metrics.efqi import *
@@ -39,7 +41,6 @@ from metrics.efqi import *
 # 图片信息
 from metrics.ag import *       # VIFB - 平均梯度
 from metrics.ei import *       # VIFB - 边缘强度
-# from metrics.mb import *       # Many
 # from metrics.pfe import *      # Many
 from metrics.sd import *       # VIFB - 标准差
 from metrics.sf import *       # VIFB - 空间频率

@@ -21,6 +21,11 @@ def ce(target: torch.Tensor, predict: torch.Tensor, bandwidth: float = 0.1, eps:
 
     Returns:
         torch.Tensor: The cross-entropy between the histograms of the target and predicted images.
+
+    Reference:
+        [1] D. M. Bulanon, T. Burks, and V. Alchanatis, "Image fusion of visible
+        and thermal images for fruit detection," Biosystems Engineering, vol. 103,
+        no. 1, pp. 12-22, 2009.
     """
     # 将预测值和目标值缩放到范围[0, 255]
     predict = predict.view(1, -1) * 255

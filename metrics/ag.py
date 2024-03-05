@@ -19,6 +19,11 @@ def ag(tensor: torch.Tensor, eps: float = 1e-10) -> torch.Tensor:
 
     Returns:
         torch.Tensor: The edge-aware gradient of the input tensor.
+
+    Reference:
+        [1] G. Cui, H. Feng, Z. Xu, Q. Li, and Y. Chen, "Detail preserved fusion of visible
+        and infrared images using regional saliency extraction and multi-scale image
+        decomposition," Optics Communications, vol. 341, pp. 199-209, 2015.
     """
     # 使用Sobel算子计算水平和垂直梯度
     _gx = kornia.filters.filter2d(tensor,torch.tensor([[[-1,  1]]]))

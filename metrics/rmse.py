@@ -19,6 +19,10 @@ def rmse(y_true: torch.Tensor, y_pred: torch.Tensor, eps: float = 1e-10) -> torc
 
     Returns:
         torch.Tensor: The RMSE between true and predicted values.
+
+    Reference:
+        [1] P. Jagalingam and A. V. Hegde, "A review of quality metrics for fused image,"
+        Aquatic Procedia, vol. 4, no. Icwrcoe, pp. 133-142, 2015.
     """
     mse_loss = torch.mean((y_true - y_pred)**2)
     rmse_loss = torch.sqrt(mse_loss + eps)

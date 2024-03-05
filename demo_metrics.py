@@ -115,7 +115,8 @@ def main():
         # 'WFQI': wfqi_metric,         # 公式一致
         # 'EFQI': efqi_metric,         # 公式一致
         # 'Q_SF':q_sf_metric,          # 公式一致
-        'Q_H': q_h_metric,           #
+        # 'Q_H': q_h_metric,           # 复现了论文
+        # 'SCC': scc_metric,           # 采用 github 仓库代码
         # 'Q_P': q_p_metric,           #
     }
     metrics_data = []

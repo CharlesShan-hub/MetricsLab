@@ -1,5 +1,4 @@
 import torch
-import kornia
 
 ###########################################################################################
 
@@ -18,6 +17,10 @@ def sd(tensor: torch.Tensor) -> torch.Tensor:
 
     Returns:
         torch.Tensor: The standard deviation of the input tensor.
+
+    Reference:
+        [1] Y.-J. Rao, "In-fibre bragg grating sensors," Measurement science and technology,
+        vol. 8, no. 4, p. 355, 1997.
     """
     return torch.sqrt(torch.mean((tensor - tensor.mean())**2))
 
