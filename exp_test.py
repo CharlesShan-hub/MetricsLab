@@ -1,24 +1,26 @@
 import os
-import csv
-import shutil
+from PIL import Image
 
-data = {}
-with open('./logs/TNO_dictionary.csv', 'r', newline='') as file:
-    csv_reader = csv.reader(file)
-    for row in csv_reader:
-        temp = {}
-        temp['ID'] = row[1]
-        temp['IS_IR'] = row[2]
-        temp['PATH'] = row[3]
-        data[row[0]] = temp
+folder_path = './imgs/TNO/ir1'
+to_path = './imgs/TNO/ir'
+for filename in os.listdir(folder_path):
+    file_path = os.path.join(folder_path, filename)
+    if os.path.isfile(file_path):
+        try:
+            # 尝试打开图片文件
+            image = Image.open(file_path)
+            if image.format == 'TIFF':
+                # 如果是tif格式的图片，则转换为bmp格式
+                image = image.convert('RGB')
+                image.save(file_path[:-4] + '.bmp')
+            # 转换为黑白
+            image_bw = image.convert('L')
+            # 保存黑白图片
+            image_bw.save(os.path.join(to_path, filename.split('.')[0] + '.bmp'))
+            print(f"已处理：{filename}")
+        except Exception as e:
+            print(f"处理文件 {filename} 时出错：{e}")
 
-for item in data:
-    if(data[item]['IS_IR']=='True'):
-        t = 'IR'
-    else:
-        t = 'VIS'
-    shutil.copy('./TNO/'+data[item]['PATH'], './MYTNO/'+t+'/'+str(data[item]['ID'])+'.'+data[item]['PATH'].split('.')[-1])
-    # shutil.copy('./TNO/'+data[item]['PATH'], './MYTNO1/'+str(data[item]['ID'])+t+'.'+data[item]['PATH'].split('.')[-1])
 
 '''
 import matplotlib.pyplot as plt
