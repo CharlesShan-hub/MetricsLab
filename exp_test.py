@@ -1,3 +1,26 @@
+import os
+import csv
+import shutil
+
+data = {}
+with open('./logs/TNO_dictionary.csv', 'r', newline='') as file:
+    csv_reader = csv.reader(file)
+    for row in csv_reader:
+        temp = {}
+        temp['ID'] = row[1]
+        temp['IS_IR'] = row[2]
+        temp['PATH'] = row[3]
+        data[row[0]] = temp
+
+for item in data:
+    if(data[item]['IS_IR']=='True'):
+        t = 'IR'
+    else:
+        t = 'VIS'
+    shutil.copy('./TNO/'+data[item]['PATH'], './MYTNO/'+t+'/'+str(data[item]['ID'])+'.'+data[item]['PATH'].split('.')[-1])
+    # shutil.copy('./TNO/'+data[item]['PATH'], './MYTNO1/'+str(data[item]['ID'])+t+'.'+data[item]['PATH'].split('.')[-1])
+
+'''
 import matplotlib.pyplot as plt
 mi = [1.2629, 1.0765, 0.7445, 1.3802, 1.1020, 0.9410, 2.8204, 1.7022, 2.4377, 1.2624, 1.2100, 1.0020, 1.2700]
 te_190 = [  251.9935,277.1870, 32.7949, 33.3386,316.3900, 87.2242, 35.7358, 68.2493,355.0536,240.9850,514.4585, 43.5443, 33.7628]
@@ -74,3 +97,4 @@ plt.plot(te_185, label='TE a=1.85')
 plt.plot(te_190, label='TE a=1.90')
 plt.legend()
 plt.show()
+'''

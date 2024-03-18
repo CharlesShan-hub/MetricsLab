@@ -1,6 +1,5 @@
 # 本案例用于验证指标与 VIFB 的一致性
 import csv
-from metrics.eva import eva_metric
 from utils import *
 
 from metrics import ce_metric
